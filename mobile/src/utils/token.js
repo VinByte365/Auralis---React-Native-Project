@@ -7,3 +7,8 @@ if(typeof token != "string") throw new Error("token must be string")
  return true
 };
 
+export const getToken = async()=>{
+    const token = await AsyncStorage.getItem("token")
+    if(!token) return null
+    return token
+}
