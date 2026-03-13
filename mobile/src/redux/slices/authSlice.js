@@ -6,15 +6,17 @@ function handleStatus(state){
   return
 }
 
-
-const authSlice = createSlice({
-  name: "auth",
-  intialState: {
+const intialStat = {
     user: {},
     isLogin: false,
     loading: false,
     error: "",
-  },
+  }
+
+
+const authSlice = createSlice({
+  name: "auth",
+  
   reducers: {},
   extraReducers: (builder)=>{
     builder.addCase(login.pending,handleStatus(state))
