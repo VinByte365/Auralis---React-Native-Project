@@ -103,7 +103,6 @@ router.get("/orders", orderController.getAllOrdersAdmin);
 
 // Generate orders PDF report
 // Query params: status, customerType, startDate, endDate, search
-router.get("/reports/orders/pdf", orderController.generateReportPDF);
 
 // ==================== ACTIVITY & LOGS ====================
 
@@ -114,17 +113,8 @@ router.get("/logs/activity", adminDashboardController.getActivityLogs);
 // ==================== COMPREHENSIVE REPORTS ====================
 
 // Full dashboard report with all analytics
-// Query params: startDate, endDate
-router.get(
-  "/reports/comprehensive",
-  adminDashboardController.getComprehensiveReport,
-);
 
 // Generate comprehensive report PDF
 // Query params: timeRange (days, default: 30)
-router.get(
-  "/reports/comprehensive/pdf",
-  adminDashboardController.generateComprehensiveReportPDF,
-);
 
 module.exports = router;

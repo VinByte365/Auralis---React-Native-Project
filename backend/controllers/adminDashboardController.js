@@ -1,8 +1,5 @@
 const adminDashboardService = require("../services/adminDashboardService");
 const controllerWrapper = require("../utils/controllerWrapper");
-const {
-  generateComprehensiveReportPDF,
-} = require("../utils/comprehensiveReportGenerator");
 
 // Dashboard Summary
 exports.getDashboardSummary = controllerWrapper(
@@ -81,18 +78,6 @@ exports.getActivityLogs = controllerWrapper((request) => {
 exports.getCheckoutQueueAnalytics = controllerWrapper(
   adminDashboardService.getCheckoutQueueAnalytics,
 );
-
-// Comprehensive Report
-exports.getComprehensiveReport = controllerWrapper((request) => {
-  const { startDate, endDate } = request.query;
-  return adminDashboardService.getComprehensiveReport({
-    startDate,
-    endDate,
-  });
-});
-
-// Generate Comprehensive Report PDF
-exports.generateComprehensiveReportPDF = generateComprehensiveReportPDF;
 
 // Staff Performance Analytics
 exports.getStaffPerformanceAnalytics = controllerWrapper((request) => {

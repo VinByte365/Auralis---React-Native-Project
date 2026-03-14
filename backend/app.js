@@ -9,22 +9,9 @@ const {
   user,
   category,
   activityLogs,
-  eligible,
-  cart,
   order,
-  checkoutQueue,
-  promo,
-  loyalty,
-  cashier,
   adminDashboard,
-  savedItems,
-  returns,
-  expense,
-  supplier,
-  stockMovement,
-  purchaseOrder,
   storeSettings,
-  bulkOperations,
 } = require("./routes/index");
 const productModel = require("./models/productModel");
 
@@ -33,9 +20,6 @@ const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:8081",
   "http://192.168.1.11:5173",
-  "https://your-backend-name.onrender.com",
-  "https://consoli-scan.vercel.app",
-  "https://consoli-scan.asherxd10245.workers.dev",
 ];
 
 app.use(
@@ -62,23 +46,10 @@ app.use(cookieParser());
 app.use("/api/v1", product);
 app.use("/api/v1", auth);
 app.use("/api/v1", user);
-app.use("/api/v1/saved-items", savedItems);
 app.use("/api/v1", category);
-app.use("/api/v1", activityLogs);
-app.use("/api/v1", eligible);
-app.use("/api/v1", cart);
-app.use("/api/v1", checkoutQueue);
 app.use("/api/v1", order);
-app.use("/api/v1", promo);
-app.use("/api/v1", loyalty);
-app.use("/api/v1/returns", returns);
-app.use("/api/v1", cashier);
+app.use("/api/v1/logs", activityLogs);
 app.use("/api/v1/admin", adminDashboard);
-app.use("/api/v1/admin/expenses", expense);
-app.use("/api/v1/admin/suppliers", supplier);
-app.use("/api/v1/admin/stock-movements", stockMovement);
-app.use("/api/v1/admin/purchase-orders", purchaseOrder);
 app.use("/api/v1/admin/settings", storeSettings);
-app.use("/api/v1/admin/bulk-operations", bulkOperations);
 
 module.exports = app;
