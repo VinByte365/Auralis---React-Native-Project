@@ -79,26 +79,9 @@ const userSchema = new mongoose.Schema(
     role: {
       type: String,
       default: "user",
-      enum: ["user", "admin", "super_admin", "checker", "merchandiser"],
+      enum: ["user", "admin"],
     },
-    loyaltyPoints: {
-      type: Number,
-      default: 0,
-    },
-    loyaltyHistory: [
-      {
-        event: { type: String, enum: ["earn", "redeem"] },
-        points: Number,
-        date: Date,
-      },
-    ],
-
-    eligibiltyDiscountUsage: {
-      discountUsed: Number,
-      purchasedUsed: Number,
-      weekStart: Date,
-      weekEnd: Date,
-    },
+   
     savedItems: [
       {
         type: mongoose.Schema.Types.ObjectId,

@@ -2,16 +2,19 @@ import { createSlice, configureStore } from "@reduxjs/toolkit";
 import { login, register } from "../thunks/authThunk";
 
 function handlePending(state) {
-  state = { ...state, isLoggedIn: false, loading: true };
+  state.loading = true;
   return;
 }
 
 function handleFulfilled(state, payload) {
-  state = { ...state, isLoggedIn: true, loading: true, user: payload.result };
+  state.isLoggedIn = true;
+  state.loading = false;
+  state.user = payload.result;
 }
 
 function handleRejected(state, payload) {
-  state = { ...state, loading: false, error: payload.result.error };
+  state.loading = false;
+  state.error = payload.result.error;
 }
 
 const initialState = {
@@ -31,15 +34,15 @@ const authSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(login.pending, handlePending(state))
-      .addCase(login.fulfilled, handleFulfilled(state))
-      .addCase(login.rejected, handleRejected(state))
+      .addCase(login.pending, handlePending)
+      .addCase(login.fulfilled, handleFulfilled)
+      .addCase(login.rejected, handleRejected)
 
-      .addCase(register.pending, handlePending(state))
-      .addCase(register.fulfilled, handleFulfilled(state))
-      .addCase(register.rejected, handleRejected(state));
+      .addCase(register.pending, handlePending)
+      .addCase(register.fulfilled, handleFulfilled)
+      .addCase(register.rejected, handleRejected);
   },
 });
 
 export const {} = authSlice.actions;
-export default auth = authSlice.reducer;
+export default authSlice.reducer;

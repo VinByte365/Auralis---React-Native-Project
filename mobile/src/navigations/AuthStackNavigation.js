@@ -8,14 +8,17 @@ const authStack = createNativeStackNavigator({
   screens: {
     Login: {
       screen: LoginScreen,
-      options: { title: "Welcome back bitch" },
+      options: {
+        headerShown: false,
+      },
     },
-    Register:{
+    Register: {
       screen: RegisterScreen,
-      options: { title: "Create an account" },
-    }
+      options: {
+        headerShown: false,
+      },
+    },
   },
 });
 
-
-export default authStack
+export default authStack;
