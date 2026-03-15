@@ -4,7 +4,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import LoginScreen from "../screens/auth/LoginScreen";
 import RegisterScreen from "../screens/auth/RegisterScreen";
 
-const authStack = createNativeStackNavigator({
+const AuthStackNavigation = createNativeStackNavigator({
   screens: {
     Login: {
       screen: LoginScreen,
@@ -21,4 +21,4 @@ const authStack = createNativeStackNavigator({
   },
 });
 
-export default authStack;
+export default AuthStackNavigation;

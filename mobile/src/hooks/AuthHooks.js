@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { login, register } from "../redux/thunks/authThunk";
+import { useNavigation } from "@react-navigation/native";
 
 export default function AuthHooks() {
   const [credentials, setCredentials] = useState({
@@ -11,11 +12,12 @@ export default function AuthHooks() {
     name: "",
     password: "",
     email: "",
-    age: 0,
   });
   const { loading, user, error, isLoggedIn } = useSelector(
     (state) => state.auth,
   );
+
+  const navigation = useNavigation();
 
   useEffect(() => {
     console.log(loading, user, error, isLoggedIn);
@@ -48,6 +50,7 @@ export default function AuthHooks() {
     loading,
     error,
     user,
+    navigation,
     handleLoginInput,
     handleRegisterInput,
     loginSubmit,

@@ -9,15 +9,14 @@ import React, { useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AuthHooks from "../../hooks/AuthHooks";
 
-export default function LoginScreen() {
+export default function LoginScreen({}) {
   const {
     credentials,
-    registerForm,
     isLoggedIn,
     loading,
     error,
+    navigation,
     handleLoginInput,
-    handleRegisterInput,
     loginSubmit,
   } = AuthHooks();
 
@@ -58,6 +57,22 @@ export default function LoginScreen() {
         <TouchableOpacity style={styles.googleButton}>
           <Text style={styles.googleText}>Continue with Google</Text>
         </TouchableOpacity>
+        <Text style={styles.registerText}>
+          Don't have an account?{" "}
+          <Text
+            style={{
+              color: "#000",
+              fontWeight: "600",
+            }}
+            onPress={() => {
+              navigation.navigate("auth", {
+                screen: "Register",
+              });
+            }}
+          >
+            Sign up
+          </Text>
+        </Text>
       </View>
     </SafeAreaView>
   );
@@ -145,5 +160,12 @@ const styles = StyleSheet.create({
     color: "#000",
     fontSize: 15,
     fontWeight: "600",
+  },
+
+  registerText: {
+    marginTop: 15,
+    color: "#000",
+    fontSize: 13,
+    textAlign: "center",
   },
 });
