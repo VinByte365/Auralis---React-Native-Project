@@ -109,19 +109,32 @@ export default function AuthHooks() {
     }
     setFormError({});
     dispatch(register(registerForm));
+    handleNavigation();
   };
-  return {
-    credentials,
-    registerForm,
-    isLoggedIn,
-    loading,
-    error,
-    user,
-    formError,
-    navigation,
-    handleLoginInput,
-    handleRegisterInput,
-    loginSubmit,
-    registerSubmit,
+
+  const handleNavigation = () => {
+    if (error) return;
+    if (user?.role != "admin")
+      return navigation.navigate("Admin",{
+        screen: "Home",
+      });
+    navigation.navigate("User",{
+      screen: "Home",
+    });
   };
 }
+
+return {
+  credentials,
+  registerForm,
+  isLoggedIn,
+  loading,
+  error,
+  user,
+  formError,
+  navigation,
+  handleLoginInput,
+  handleRegisterInput,
+  loginSubmit,
+  registerSubmit,
+};
