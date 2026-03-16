@@ -6,15 +6,16 @@ function handlePending(state) {
   return;
 }
 
-function handleFulfilled(state, payload) {
+function handleFulfilled(state, action) {
   state.isLoggedIn = true;
   state.loading = false;
-  state.user = payload.result;
+  state.user = action.payload.user;
 }
 
-function handleRejected(state, payload) {
+function handleRejected(state, action) {
   state.loading = false;
-  state.error = payload.result.error;
+  state.error =
+    action.payload?.error || "Something went wrong, please try again later.";
 }
 
 const initialState = {
@@ -31,6 +32,9 @@ const authSlice = createSlice({
     resetState: (state, action) => {
       state = { ...initialState };
     },
+    setError: (state, action) => {
+      state.error = [...state.error, action.payload];
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -44,5 +48,5 @@ const authSlice = createSlice({
   },
 });
 
-export const {} = authSlice.actions;
+export const { resetState, setError } = authSlice.actions;
 export default authSlice.reducer;

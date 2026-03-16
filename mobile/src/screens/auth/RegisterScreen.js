@@ -13,7 +13,7 @@ export default function RegisterScreen() {
   const {
     registerForm,
     loading,
-    error,
+    formError,
     handleRegisterInput,
     registerSubmit,
     navigation,
@@ -34,6 +34,7 @@ export default function RegisterScreen() {
             placeholder="John Doe"
             placeholderTextColor="#888"
           />
+          {formError?.name && <Text style={styles.error}>{formError.name}</Text>}
         </View>
 
         <View style={styles.inputGroup}>
@@ -47,6 +48,9 @@ export default function RegisterScreen() {
             keyboardType="email-address"
             autoCapitalize="none"
           />
+          {formError?.email && (
+            <Text style={styles.error}>{formError.email}</Text>
+          )}
         </View>
 
         <View style={styles.inputGroup}>
@@ -55,35 +59,34 @@ export default function RegisterScreen() {
             style={styles.input}
             onChangeText={(value) => handleRegisterInput("password", value)}
             value={registerForm.password}
-            secureTextEntry={true}
+            secureTextEntry
             placeholder="Enter your password"
             placeholderTextColor="#888"
           />
+          {formError?.password && (
+            <Text style={styles.error}>{formError.password}</Text>
+          )}
         </View>
 
-        <TouchableOpacity style={styles.loginButton} onPress={registerSubmit}>
-          <Text style={styles.loginText}>
+        <TouchableOpacity style={styles.primaryButton} onPress={registerSubmit}>
+          <Text style={styles.primaryText}>
             {loading ? "Creating Account..." : "Register"}
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.googleButton}>
-          <Text style={styles.googleText}>Continue with Google</Text>
+        <TouchableOpacity style={styles.secondaryButton}>
+          <Text style={styles.secondaryText}>Continue with Google</Text>
         </TouchableOpacity>
-
-        {error && <Text style={styles.error}>{error}</Text>}
 
         <Text style={styles.signInText}>
           Already have an account?{" "}
           <Text
-            style={{
-              fontWeight: 600,
-            }}
-            onPress={() => {
+            style={styles.signInLink}
+            onPress={() =>
               navigation.navigate("auth", {
                 screen: "Login",
-              });
-            }}
+              })
+            }
           >
             Sign in
           </Text>
@@ -105,7 +108,7 @@ const styles = StyleSheet.create({
   formCard: {
     width: "100%",
     maxWidth: 400,
-    backgroundColor: "#ffffff",
+    backgroundColor: "#fff",
     padding: 28,
     borderRadius: 12,
     borderWidth: 1,
@@ -116,17 +119,17 @@ const styles = StyleSheet.create({
     fontSize: 26,
     fontWeight: "700",
     color: "#000",
-    marginBottom: 4,
   },
 
   subtitle: {
     fontSize: 14,
     color: "#666",
+    marginTop: 4,
     marginBottom: 28,
   },
 
   inputGroup: {
-    marginBottom: 18,
+    marginBottom: 16,
   },
 
   label: {
@@ -147,46 +150,52 @@ const styles = StyleSheet.create({
     backgroundColor: "#fafafa",
   },
 
-  loginButton: {
-    marginTop: 12,
+  primaryButton: {
+    marginTop: 10,
     backgroundColor: "#000",
     paddingVertical: 14,
     borderRadius: 8,
     alignItems: "center",
+    width: "100%",
   },
 
-  loginText: {
+  primaryText: {
     color: "#fff",
     fontSize: 15,
     fontWeight: "600",
   },
 
-  googleButton: {
+  secondaryButton: {
     marginTop: 12,
     borderWidth: 1,
     borderColor: "#000",
     paddingVertical: 14,
     borderRadius: 8,
     alignItems: "center",
-    backgroundColor: "#fff",
+    width: "100%",
   },
 
-  googleText: {
+  secondaryText: {
     color: "#000",
     fontSize: 15,
     fontWeight: "600",
   },
 
   error: {
-    marginTop: 10,
+    marginTop: 4,
     color: "red",
-    fontSize: 13,
+    fontSize: 12,
   },
 
   signInText: {
-    marginTop: 15,
-    color: "#000",
-    font: 13,
+    marginTop: 20,
+    fontSize: 13,
     textAlign: "center",
+    color: "#444",
+  },
+
+  signInLink: {
+    fontWeight: "600",
+    color: "#000",
   },
 });
