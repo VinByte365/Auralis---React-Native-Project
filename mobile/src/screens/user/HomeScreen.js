@@ -7,14 +7,14 @@ import {
   ScrollView,
   TouchableOpacity,
 } from "react-native";
-
-import HomeCarousel from "../../components/carousel/HomeCarousel";
+import HomeCarousel from "../../components/HomeCarousel";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function HomeScreen() {
   const banners = [
-    { id: 1, image: "../../assets/home/1.png" },
-    { id: 2, image: "../../assets/home/2.png" },
-    { id: 3, image: "../../assets/home/3.png" },
+    { id: 6, image: require("../../../assets/home/6.png") },
+    { id: 2, image: require("../../../assets/home/2.png") },
+    { id: 3, image: require("../../../assets/home/3.png") },
   ];
 
   const categories = [
@@ -41,41 +41,43 @@ export default function HomeScreen() {
   );
 
   return (
-    <FlatList
-      data={products}
-      renderItem={renderProduct}
-      numColumns={2}
-      keyExtractor={(item) => item.id.toString()}
-      ListHeaderComponent={
-        <>
-          <View style={styles.header}>
-            <Text style={styles.logo}>Auralis</Text>
-            <TouchableOpacity>
-              <Text style={styles.cart}>🛒</Text>
-            </TouchableOpacity>
-          </View>
+    <SafeAreaView>
+      <FlatList
+        data={products}
+        renderItem={renderProduct}
+        numColumns={2}
+        keyExtractor={(item) => item.id.toString()}
+        ListHeaderComponent={
+          <>
+            <View style={styles.header}>
+              <Text style={styles.logo}>Auralis</Text>
+              <TouchableOpacity>
+                <Text style={styles.cart}>🛒</Text>
+              </TouchableOpacity>
+            </View>
 
-          <HomeCarousel data={banners} />
+            <HomeCarousel data={banners} />
 
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Categories</Text>
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Categories</Text>
 
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              {categories.map((cat) => (
-                <View key={cat.id} style={styles.categoryCard}>
-                  <Text style={styles.categoryText}>{cat.name}</Text>
-                </View>
-              ))}
-            </ScrollView>
-          </View>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                {categories.map((cat) => (
+                  <View key={cat.id} style={styles.categoryCard}>
+                    <Text style={styles.categoryText}>{cat.name}</Text>
+                  </View>
+                ))}
+              </ScrollView>
+            </View>
 
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Featured Products</Text>
-          </View>
-        </>
-      }
-      contentContainerStyle={styles.container}
-    />
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Featured Products</Text>
+            </View>
+          </>
+        }
+        contentContainerStyle={styles.container}
+      />
+    </SafeAreaView>
   );
 }
 

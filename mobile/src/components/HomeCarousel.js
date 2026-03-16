@@ -18,17 +18,14 @@ export default function HomeCarousel({ data }) {
         loop
         onSnapToItem={(i) => setIndex(i)}
         renderItem={({ item }) => (
-          <Image source={{ uri: item.image }} style={styles.image} />
+          <Image source={item.image} style={styles.image} />
         )}
       />
 
       {/* Pagination Dots */}
       <View style={styles.pagination}>
         {data.map((_, i) => (
-          <View
-            key={i}
-            style={[styles.dot, index === i && styles.activeDot]}
-          />
+          <View key={i} style={[styles.dot, index === i && styles.activeDot]} />
         ))}
       </View>
     </View>

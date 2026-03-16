@@ -98,6 +98,7 @@ export default function AuthHooks() {
     }
     setFormError({});
     dispatch(login(credentials));
+    handleNavigation()
   };
 
   const registerSubmit = async () => {
@@ -114,27 +115,27 @@ export default function AuthHooks() {
 
   const handleNavigation = () => {
     if (error) return;
-    if (user?.role != "admin")
-      return navigation.navigate("Admin",{
+    if (user?.role == "admin")
+      return navigation.navigate("Admin", {
         screen: "Home",
       });
-    navigation.navigate("User",{
+    navigation.navigate("User", {
       screen: "Home",
     });
   };
-}
 
-return {
-  credentials,
-  registerForm,
-  isLoggedIn,
-  loading,
-  error,
-  user,
-  formError,
-  navigation,
-  handleLoginInput,
-  handleRegisterInput,
-  loginSubmit,
-  registerSubmit,
-};
+  return {
+    credentials,
+    registerForm,
+    isLoggedIn,
+    loading,
+    error,
+    user,
+    formError,
+    navigation,
+    handleLoginInput,
+    handleRegisterInput,
+    loginSubmit,
+    registerSubmit,
+  };
+}

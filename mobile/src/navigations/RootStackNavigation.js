@@ -11,9 +11,9 @@ const MergeNavigations = createNativeStackNavigator({
     User: {
       screen: UserStackNavigation,
     },
-    Admin:{
+    // Admin:{
       
-    }
+    // }
   },
   screenOptions: {
     headerShown: false,
