@@ -24,7 +24,7 @@ export default function AuthHooks() {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    console.log(loading, user, error, isLoggedIn);
+    // console.log(loading, user, error, isLoggedIn);
   }, [error, loading, user, isLoggedIn]);
 
   const handleLoginInput = (field, value) => {
