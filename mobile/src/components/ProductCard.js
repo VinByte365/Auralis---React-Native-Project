@@ -1,24 +1,46 @@
-import { View, Text, FlatList, StyleSheet, TouchableOpacity } from "react-native";
+import {
+  View,
+  Text,
+  FlatList,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+} from "react-native";
 import React from "react";
 
 export default function ProductCard({ products }) {
   const renderProduct = ({ item }) => (
     <TouchableOpacity style={styles.productCard}>
       <View style={styles.productImage}>
-        <View style={styles.imagePlaceholder} />
+        {item.images?.[0]?.url ? (
+          <Image
+            source={{ uri: item.images[0].url }}
+            style={styles.imagePlaceholder}
+          />
+        ) : (
+          <View style={styles.imagePlaceholder} />
+        )}
       </View>
       <View style={styles.productInfo}>
         <Text style={styles.productName} numberOfLines={2}>
           {item.name}
         </Text>
         <View style={styles.productMeta}>
-          <Text style={styles.productPrice}>{item.price}</Text>
+          <Text style={styles.productPrice}>
+            PHP{" "}
+            {Number(
+              item.saleActive && item.salePrice
+                ? item.salePrice
+                : item.price || 0,
+            ).toFixed(2)}
+          </Text>
           <View style={styles.ratingContainer}>
-            <Text style={styles.ratingStar}>★</Text>
-            <Text style={styles.ratingText}>{item.rating}</Text>
+            <Text style={styles.ratingText}>{item.unit || "pc"}</Text>
           </View>
         </View>
-        <Text style={styles.soldText}>{item.sold}+ sold</Text>
+        <Text style={styles.soldText}>
+          {item.category?.categoryName || "Uncategorized"}
+        </Text>
       </View>
     </TouchableOpacity>
   );
@@ -28,7 +50,7 @@ export default function ProductCard({ products }) {
       data={products}
       renderItem={renderProduct}
       numColumns={2}
-      keyExtractor={(item) => item.id.toString()}
+      keyExtractor={(item) => String(item._id || item.id)}
       contentContainerStyle={styles.container}
       scrollEnabled={false}
       columnWrapperStyle={styles.columnWrapper}

@@ -97,8 +97,17 @@ export default function AuthHooks() {
       return;
     }
     setFormError({});
-    dispatch(login(credentials));
-    handleNavigation()
+
+    try {
+      const result = await dispatch(login(credentials)).unwrap();
+      handleNavigation(result.user);
+    } catch (submissionError) {
+      setFormError((current) => ({
+        ...current,
+        general:
+          submissionError?.error || submissionError?.message || "Login failed",
+      }));
+    }
   };
 
   const registerSubmit = async () => {
@@ -109,13 +118,24 @@ export default function AuthHooks() {
       return;
     }
     setFormError({});
-    dispatch(register(registerForm));
-    handleNavigation();
+
+    try {
+      const result = await dispatch(register(registerForm)).unwrap();
+      handleNavigation(result.user);
+    } catch (submissionError) {
+      setFormError((current) => ({
+        ...current,
+        general:
+          submissionError?.error ||
+          submissionError?.message ||
+          "Registration failed",
+      }));
+    }
   };
 
-  const handleNavigation = () => {
+  const handleNavigation = (currentUser = user) => {
     if (error) return;
-    if (user?.role == "admin")
+    if (currentUser?.role == "admin")
       return navigation.navigate("Admin", {
         screen: "Home",
       });

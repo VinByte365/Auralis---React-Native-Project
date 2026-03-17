@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   View,
   Text,
@@ -7,45 +7,39 @@ import {
   TouchableOpacity,
   TextInput,
   StatusBar,
-  Dimensions,
 } from "react-native";
 import HomeCarousel from "../../components/HomeCarousel";
 import { SafeAreaView } from "react-native-safe-area-context";
 import ProductCard from "../../components/ProductCard";
+import FilterBottomSheet from "../../components/FilterBottomSheet";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import useHome from "../../hooks/user/useHome";
 
-const { width } = Dimensions.get("window");
-
 export default function HomeScreen() {
-  const { searchQuery, selectedCategory, handleSearch, handleCategoryPress } =
-    useHome();
+  const {
+    searchQuery,
+    selectedCategory,
+    selectedRating,
+    handleSearch,
+    handleCategoryPress,
+    handleRatingPress,
+    handleClearAllFilters,
+    handlePriceChange,
+    handleClearPriceRange,
+    categories,
+    products,
+    cartCount,
+    isLoading,
+    error,
+    priceGTE,
+    priceLTE,
+  } = useHome();
+  const [isFilterVisible, setFilterVisible] = React.useState(false);
 
   const banners = [
     { id: 6, image: require("../../../assets/home/6.png") },
     { id: 2, image: require("../../../assets/home/2.png") },
     { id: 3, image: require("../../../assets/home/3.png") },
-  ];
-
-  const categories = [
-    { id: 1, name: "Phones" },
-    { id: 2, name: "Shoes" },
-    { id: 3, name: "Gaming" },
-    { id: 4, name: "Fashion" },
-    { id: 5, name: "Accessories" },
-  ];
-
-  const products = [
-    { id: 1, name: "AirPods Pro", price: "$199", rating: 4.5, sold: 1234 },
-    { id: 2, name: "Gaming Mouse", price: "$79", rating: 4.3, sold: 892 },
-    { id: 3, name: "Nike Sneakers", price: "$120", rating: 4.7, sold: 2341 },
-    {
-      id: 4,
-      name: "Mechanical Keyboard",
-      price: "$150",
-      rating: 4.6,
-      sold: 567,
-    },
   ];
 
   return (
@@ -69,9 +63,11 @@ export default function HomeScreen() {
               size={24}
               color="#333"
             />
-            <View style={styles.cartBadge}>
-              <Text style={styles.cartBadgeText}>2</Text>
-            </View>
+            {cartCount > 0 && (
+              <View style={styles.cartBadge}>
+                <Text style={styles.cartBadgeText}>{cartCount}</Text>
+              </View>
+            )}
           </TouchableOpacity>
         </View>
       </View>
@@ -107,47 +103,22 @@ export default function HomeScreen() {
               />
             </TouchableOpacity>
           )}
+
+          <TouchableOpacity
+            style={styles.filterButton}
+            onPress={() => setFilterVisible(true)}
+          >
+            <MaterialCommunityIcons
+              name="filter-variant"
+              size={20}
+              color="#333"
+            />
+          </TouchableOpacity>
         </View>
 
         {/* Carousel */}
         <View style={styles.carouselContainer}>
           <HomeCarousel data={banners} />
-        </View>
-
-        {/* Categories */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Categories</Text>
-            <TouchableOpacity>
-              <Text style={styles.seeAllText}>See All</Text>
-            </TouchableOpacity>
-          </View>
-
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.categoriesContainer}
-          >
-            {categories.map((cat) => (
-              <TouchableOpacity
-                key={cat.id}
-                style={[
-                  styles.categoryCard,
-                  selectedCategory === cat.id && styles.categoryCardActive,
-                ]}
-                onPress={() => handleCategoryPress(cat.id)}
-              >
-                <Text
-                  style={[
-                    styles.categoryText,
-                    selectedCategory === cat.id && styles.categoryTextActive,
-                  ]}
-                >
-                  {cat.name}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
         </View>
 
         {/* Featured Products */}
@@ -160,8 +131,44 @@ export default function HomeScreen() {
           </View>
         </View>
 
+        {isLoading ? (
+          <View style={styles.feedbackContainer}>
+            <Text style={styles.feedbackText}>Loading products...</Text>
+          </View>
+        ) : null}
+
+        {!isLoading && error ? (
+          <View style={styles.feedbackContainer}>
+            <Text style={styles.feedbackError}>{error}</Text>
+          </View>
+        ) : null}
+
+        {!isLoading && !error && products.length === 0 ? (
+          <View style={styles.feedbackContainer}>
+            <Text style={styles.feedbackText}>
+              No products matched your filters.
+            </Text>
+          </View>
+        ) : null}
+
         <ProductCard products={products} />
       </ScrollView>
+
+      <FilterBottomSheet
+        visible={isFilterVisible}
+        onClose={() => setFilterVisible(false)}
+        categories={categories}
+        selectedCategory={selectedCategory}
+        onSelectCategory={handleCategoryPress}
+        selectedRating={selectedRating}
+        onSelectRating={handleRatingPress}
+        minPrice={priceGTE}
+        maxPrice={priceLTE}
+        onChangeMinPrice={(value) => handlePriceChange("priceGTE", value)}
+        onChangeMaxPrice={(value) => handlePriceChange("priceLTE", value)}
+        onClearPrice={handleClearPriceRange}
+        onClearAll={handleClearAllFilters}
+      />
     </SafeAreaView>
   );
 }
@@ -226,6 +233,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#eee",
   },
+  filterButton: {
+    marginLeft: 10,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#efefef",
+  },
   searchIcon: {
     marginRight: 8,
   },
@@ -243,6 +259,18 @@ const styles = StyleSheet.create({
     marginTop: 24,
     paddingHorizontal: 20,
   },
+  feedbackContainer: {
+    paddingHorizontal: 20,
+    paddingBottom: 12,
+  },
+  feedbackText: {
+    fontSize: 14,
+    color: "#666",
+  },
+  feedbackError: {
+    fontSize: 14,
+    color: "#d11a2a",
+  },
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -259,29 +287,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#666",
     fontWeight: "500",
-  },
-  categoriesContainer: {
-    paddingRight: 20,
-  },
-  categoryCard: {
-    paddingVertical: 8,
-    paddingHorizontal: 18,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "#e0e0e0",
-    marginRight: 10,
-    backgroundColor: "#fff",
-  },
-  categoryCardActive: {
-    backgroundColor: "#000",
-    borderColor: "#000",
-  },
-  categoryText: {
-    fontSize: 14,
-    color: "#333",
-    fontWeight: "500",
-  },
-  categoryTextActive: {
-    color: "#fff",
   },
 });
