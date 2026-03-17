@@ -13,11 +13,13 @@ import HomeCarousel from "../../components/HomeCarousel";
 import { SafeAreaView } from "react-native-safe-area-context";
 import ProductCard from "../../components/ProductCard";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import useHome from "../../hooks/user/useHome";
+
 const { width } = Dimensions.get("window");
 
 export default function HomeScreen() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState(1); // Default to first category
+  const { searchQuery, selectedCategory, handleSearch, handleCategoryPress } =
+    useHome();
 
   const banners = [
     { id: 6, image: require("../../../assets/home/6.png") },
@@ -46,18 +48,6 @@ export default function HomeScreen() {
     },
   ];
 
-  const handleSearch = (text) => {
-    setSearchQuery(text);
-    // Implement search logic here
-    console.log("Searching for:", text);
-  };
-
-  const handleCategoryPress = (categoryId) => {
-    setSelectedCategory(categoryId);
-    // Implement category filter logic here
-    console.log("Selected category:", categoryId);
-  };
-
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
@@ -74,7 +64,11 @@ export default function HomeScreen() {
             />
           </TouchableOpacity>
           <TouchableOpacity style={styles.iconButton}>
-            <MaterialCommunityIcons name="cart-outline" size={24} color="#333" />
+            <MaterialCommunityIcons
+              name="cart-outline"
+              size={24}
+              color="#333"
+            />
             <View style={styles.cartBadge}>
               <Text style={styles.cartBadgeText}>2</Text>
             </View>
@@ -105,7 +99,7 @@ export default function HomeScreen() {
             clearButtonMode="while-editing"
           />
           {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery("")}>
+            <TouchableOpacity onPress={() => handleSearch("")}>
               <MaterialCommunityIcons
                 name="close-circle"
                 size={18}
