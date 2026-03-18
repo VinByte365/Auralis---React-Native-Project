@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from "react";
 import {
   Alert,
   Image,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -14,6 +13,7 @@ import * as ImagePicker from "expo-image-picker";
 import { useDispatch, useSelector } from "react-redux";
 import { updateProfile } from "../../services/userService";
 import { hydrateSession } from "../../redux/thunks/authThunk";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const avatarPlaceholder = require("../../../assets/home/3.png");
 
@@ -78,7 +78,7 @@ export default function ProfileScreen() {
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ImagePicker.MediaType,
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.8,
@@ -170,10 +170,6 @@ export default function ProfileScreen() {
           >
             <Text style={styles.photoButtonText}>Upload / Take Photo</Text>
           </TouchableOpacity>
-        </View>
-
-        <View style={styles.pointsChip}>
-          <Text style={styles.pointsText}>Loyalty: {pointsLabel}</Text>
         </View>
 
         <Text style={styles.label}>Name</Text>
