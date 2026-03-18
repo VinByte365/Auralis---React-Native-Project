@@ -16,14 +16,12 @@ import useProduct from "../../hooks/user/useProduct";
 import ProductActionBar from "../../components/ProductActionBar";
 import ProductReviewSection from "../../components/ProductReviewSection";
 import ProductReviewEditor from "../../components/ProductReviewEditor";
-import { useDispatch } from "react-redux";
-import { addToCart } from "../../redux/thunks/cartThunks";
-
 const productImagePlaceholder = require("../../../assets/home/3.png");
 
 export default function ProductScreen({ route, navigation }) {
   const productId = route?.params?.productId;
   const {
+    userId,
     productDetails,
     isLoading,
     reviews,
@@ -33,6 +31,7 @@ export default function ProductScreen({ route, navigation }) {
     suggestedProducts,
     displayPrice,
     canReview,
+    myReview,
     isLiked,
     showReviewEditor,
     reviewEditorMode,
@@ -42,8 +41,10 @@ export default function ProductScreen({ route, navigation }) {
     handleAddToCart,
     handleOrderNow,
     handleReviewSubmit,
+    handleDeleteReview,
     openAddReviewEditor,
-  } = useProduct(productId);
+    openEditReviewEditor,
+  } = useProduct(productId, navigation);
 
   const reviewSectionSummary = summary;
   const reviewSectionData = Array.isArray(reviews) ? reviews : [];
@@ -142,7 +143,28 @@ export default function ProductScreen({ route, navigation }) {
               isLoading={reviewSectionLoading}
               error={reviewSectionError}
               maxItems={5}
+              showWriteReview={canReview}
+              currentUserId={userId}
               onPressWriteReview={openAddReviewEditor}
+              onPressEditReview={openEditReviewEditor}
+              onPressDeleteReview={(review) => {
+                Alert.alert(
+                  "Delete review",
+                  "Are you sure you want to delete your review?",
+                  [
+                    { text: "Cancel", style: "cancel" },
+                    {
+                      text: "Delete",
+                      style: "destructive",
+                      onPress: () => {
+                        if (String(review?._id) === String(myReview?._id)) {
+                          handleDeleteReview();
+                        }
+                      },
+                    },
+                  ],
+                );
+              }}
               onPressViewAll={() =>
                 Alert.alert(
                   "View all reviews",
@@ -228,11 +250,29 @@ export default function ProductScreen({ route, navigation }) {
             <View style={styles.modalHandle} />
             <ProductReviewEditor
               mode={reviewEditorMode}
-              initialRating={0}
-              initialComment=""
+              initialRating={
+                reviewEditorMode === "update" ? myReview?.rating || 0 : 0
+              }
+              initialComment={
+                reviewEditorMode === "update" ? myReview?.comment || "" : ""
+              }
               isSubmitting={isSubmittingReview}
-              showDelete={false}
+              showDelete={reviewEditorMode === "update"}
               onCancel={() => setShowReviewEditor(false)}
+              onDelete={() => {
+                Alert.alert(
+                  "Delete review",
+                  "Are you sure you want to delete your review?",
+                  [
+                    { text: "Cancel", style: "cancel" },
+                    {
+                      text: "Delete",
+                      style: "destructive",
+                      onPress: handleDeleteReview,
+                    },
+                  ],
+                );
+              }}
               onSubmit={handleReviewSubmit}
             />
           </View>

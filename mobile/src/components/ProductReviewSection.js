@@ -1,7 +1,7 @@
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
-function ReviewCard({ review }) {
+function ReviewCard({ review, isOwnReview, onPressEdit, onPressDelete }) {
   return (
     <View style={styles.reviewCard}>
       <View style={styles.reviewTopRow}>
@@ -11,6 +11,19 @@ function ReviewCard({ review }) {
       <Text style={styles.reviewComment}>
         {review?.comment?.trim() || "No comment"}
       </Text>
+
+      {isOwnReview ? (
+        <View style={styles.reviewActionsRow}>
+          <TouchableOpacity onPress={onPressEdit} activeOpacity={0.7}>
+            <Text style={styles.reviewActionText}>Edit</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={onPressDelete} activeOpacity={0.7}>
+            <Text style={[styles.reviewActionText, styles.deleteActionText]}>
+              Delete
+            </Text>
+          </TouchableOpacity>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -26,8 +39,11 @@ export default function ProductReviewSection({
   loadingText = "Loading reviews...",
   writeReviewLabel = "Write a Review",
   showWriteReview = true,
+  currentUserId = "",
   onPressWriteReview,
   onPressViewAll,
+  onPressEditReview,
+  onPressDeleteReview,
 }) {
   const safeReviews = Array.isArray(reviews) ? reviews : [];
   const visibleReviews = safeReviews.slice(
@@ -65,12 +81,24 @@ export default function ProductReviewSection({
       ) : null}
 
       {!isLoading && !error && visibleReviews.length > 0
-        ? visibleReviews.map((review) => (
-            <ReviewCard
-              key={String(review?._id || Math.random())}
-              review={review}
-            />
-          ))
+        ? visibleReviews.map((review) => {
+            const reviewUserId = review?.user?._id || review?.user;
+            const isOwnReview =
+              Boolean(currentUserId) &&
+              String(reviewUserId) === String(currentUserId);
+
+            return (
+              <ReviewCard
+                key={String(
+                  review?._id || reviewUserId || review?.comment || "review",
+                )}
+                review={review}
+                isOwnReview={isOwnReview}
+                onPressEdit={() => onPressEditReview?.(review)}
+                onPressDelete={() => onPressDeleteReview?.(review)}
+              />
+            );
+          })
         : null}
 
       {!isLoading && !error && safeReviews.length > visibleReviews.length ? (
@@ -163,6 +191,22 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#444",
     lineHeight: 19,
+  },
+  reviewActionsRow: {
+    marginTop: 12,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: "#f0f0f0",
+    flexDirection: "row",
+    gap: 16,
+  },
+  reviewActionText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#111",
+  },
+  deleteActionText: {
+    color: "#d11a2a",
   },
   viewAllButton: {
     alignSelf: "flex-start",

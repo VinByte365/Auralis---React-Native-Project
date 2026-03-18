@@ -7,7 +7,7 @@ const Review = require("../models/reviewModel");
 async function ensureVerifiedPurchase(productId, userId) {
   const verifiedOrder = await Order.findOne({
     user: userId,
-    status: { $in: ["CONFIRMED", "PROCESSING", "COMPLETED"] },
+    status:"COMPLETED",
     "items.product": productId,
   }).select("_id");
 
