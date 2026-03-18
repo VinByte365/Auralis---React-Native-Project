@@ -10,9 +10,12 @@ import React from "react";
 
 const productImagePlaceholder = require("../../assets/home/3.png");
 
-export default function ProductCard({ products }) {
+export default function ProductCard({ products, handleClick }) {
   const renderProduct = ({ item }) => (
-    <TouchableOpacity style={styles.productCard}>
+    <TouchableOpacity
+      style={styles.productCard}
+      onPress={() => handleClick?.(item._id)}
+    >
       <View style={styles.productImage}>
         {item.images?.[0]?.url ? (
           <Image

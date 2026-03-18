@@ -36,6 +36,7 @@ export default function HomeScreen() {
     priceLTE,
     refreshing,
     handleRefresh,
+    handleProductClick
   } = useHome();
   const [isFilterVisible, setFilterVisible] = React.useState(false);
 
@@ -204,7 +205,7 @@ export default function HomeScreen() {
           </View>
         ) : null}
 
-        <ProductCard products={products} />
+        <ProductCard products={products} handleClick={handleProductClick} />
       </ScrollView>
 
       <FilterBottomSheet

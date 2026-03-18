@@ -3,6 +3,40 @@ const { uploadImage, deleteAssets } = require("../utils/cloundinaryUtil");
 const { createLog } = require("./activityLogsService");
 const slugify = require("slugify");
 
+const buildProductFilters = (query = {}) => {
+  const { q, categoryId, priceGTE, priceLTE } = query;
+  const filters = { deletedAt: null };
+
+  if (q && q.trim()) {
+    const searchTerm = q.trim();
+    filters.$or = [
+      { name: { $regex: searchTerm, $options: "i" } },
+      { sku: { $regex: searchTerm, $options: "i" } },
+      { barcode: { $regex: searchTerm, $options: "i" } },
+    ];
+  }
+
+  if (categoryId) {
+    filters.category = categoryId;
+  }
+
+  if (priceGTE !== undefined || priceLTE !== undefined) {
+    filters.price = {};
+    if (priceGTE !== undefined && priceGTE !== "") {
+      filters.price.$gte = Number(priceGTE);
+    }
+    if (priceLTE !== undefined && priceLTE !== "") {
+      filters.price.$lte = Number(priceLTE);
+    }
+
+    if (Object.keys(filters.price).length === 0) {
+      delete filters.price;
+    }
+  }
+
+  return filters;
+};
+
 const create = async (request) => {
   if (!request.body) throw new Error(`theres no payload`);
   console.log(request.user);
@@ -35,13 +69,16 @@ const create = async (request) => {
 };
 
 const getAll = async (request) => {
-  const products = await Product.find().populate("category");
+  const filters = buildProductFilters(request.query || {});
+  const products = await Product.find(filters)
+    .populate("category")
+    .sort({ createdAt: -1 });
   return products;
 };
 
 const getById = async (request = {}) => {
   const { productId } = request.params;
-  const product = await Product.findById(productId);
+  const product = await Product.findById(productId).populate("category");
   if (!product) throw new Error("product is not found");
   return product;
 };

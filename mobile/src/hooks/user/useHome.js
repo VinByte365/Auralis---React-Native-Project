@@ -14,6 +14,7 @@ import {
   setSelectedCategory,
   setSelectedRating,
 } from "../../redux/slices/productSlice";
+import { useNavigation } from "@react-navigation/native";
 
 const useHome = () => {
   const searchTimeout = useRef(null);
@@ -31,6 +32,7 @@ const useHome = () => {
   const cartItems = useSelector((state) => state.cart.items);
   const [refreshing, setRefreshing] = useState(false);
   const dispatch = useDispatch();
+  const navigation = useNavigation();
 
   const fetchData = useCallback(async () => {
     await Promise.all([
@@ -113,6 +115,10 @@ const useHome = () => {
     }
   };
 
+  const handleProductClick = (productId) => {
+    navigation.navigate("Product", { productId });
+  };
+
   return {
     products: filteredProducts,
     categories,
@@ -133,6 +139,7 @@ const useHome = () => {
     fetchData,
     refreshing,
     handleRefresh,
+    handleProductClick,
   };
 };
 

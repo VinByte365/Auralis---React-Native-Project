@@ -12,11 +12,21 @@ export const getProducts = createAsyncThunk(
     const { priceGTE, priceLTE, searchQuery, selectedRating } =
       getState().product;
 
+    const normalizedPriceGTE =
+      priceGTE === "" || priceGTE === null || Number(priceGTE) <= 0
+        ? undefined
+        : priceGTE;
+
+    const normalizedPriceLTE =
+      priceLTE === "" || priceLTE === null || Number(priceLTE) <= 0
+        ? undefined
+        : priceLTE;
+
     try {
       return await fetchProducts({
         q: searchQuery,
-        priceGTE,
-        priceLTE,
+        priceGTE: normalizedPriceGTE,
+        priceLTE: normalizedPriceLTE,
         minRating: selectedRating || undefined,
       });
     } catch (error) {
