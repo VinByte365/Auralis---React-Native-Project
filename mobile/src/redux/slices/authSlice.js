@@ -7,9 +7,13 @@ function handlePending(state) {
 }
 
 function handleFulfilled(state, action) {
+  const nextUser = action.payload?.user || {};
+  const hasIdentity = Boolean(nextUser?._id || nextUser?.userId);
+
   state.isLoggedIn = true;
   state.loading = false;
-  state.user = action.payload.user;
+  state.user = nextUser;
+  state.isLoggedIn = hasIdentity || state.isLoggedIn;
   state.error = "";
   state.bootstrapped = true;
 }

@@ -38,6 +38,7 @@ export default function HomeScreen() {
     handleRefresh,
     handleProductClick,
     handleCartClick,
+    handleOpenDrawer,
   } = useHome();
   const [isFilterVisible, setFilterVisible] = React.useState(false);
 
@@ -53,7 +54,15 @@ export default function HomeScreen() {
 
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.logo}>AURALIS</Text>
+        <View style={styles.headerLeft}>
+          <TouchableOpacity
+            style={styles.menuButton}
+            onPress={handleOpenDrawer}
+          >
+            <MaterialCommunityIcons name="menu" size={24} color="#333" />
+          </TouchableOpacity>
+          <Text style={styles.logo}>AURALIS</Text>
+        </View>
         <View style={styles.headerIcons}>
           <TouchableOpacity style={styles.iconButton}>
             <MaterialCommunityIcons
@@ -241,6 +250,13 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: "#f0f0f0",
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  menuButton: {
+    marginRight: 12,
   },
   logo: {
     fontSize: 20,

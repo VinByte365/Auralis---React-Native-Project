@@ -1,8 +1,6 @@
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { login, register } from "../redux/thunks/authThunk";
-import { resetState, setError } from "../redux/slices/authSlice";
-import { useNavigation } from "@react-navigation/native";
 
 export default function AuthHooks() {
   const [credentials, setCredentials] = useState({
@@ -19,13 +17,7 @@ export default function AuthHooks() {
   const { loading, user, error, isLoggedIn } = useSelector(
     (state) => state.auth,
   );
-
-  const navigation = useNavigation();
   const dispatch = useDispatch();
-
-  useEffect(() => {
-    // console.log(loading, user, error, isLoggedIn);
-  }, [error, loading, user, isLoggedIn]);
 
   const handleLoginInput = (field, value) => {
     setCredentials({ ...credentials, [field]: value });
@@ -99,8 +91,7 @@ export default function AuthHooks() {
     setFormError({});
 
     try {
-      const result = await dispatch(login(credentials)).unwrap();
-      handleNavigation(result.user);
+      await dispatch(login(credentials)).unwrap();
     } catch (submissionError) {
       setFormError((current) => ({
         ...current,
@@ -120,8 +111,7 @@ export default function AuthHooks() {
     setFormError({});
 
     try {
-      const result = await dispatch(register(registerForm)).unwrap();
-      handleNavigation(result.user);
+      await dispatch(register(registerForm)).unwrap();
     } catch (submissionError) {
       setFormError((current) => ({
         ...current,
@@ -133,17 +123,6 @@ export default function AuthHooks() {
     }
   };
 
-  const handleNavigation = (currentUser = user) => {
-    if (error) return;
-    if (currentUser?.role == "admin")
-      return navigation.navigate("Admin", {
-        screen: "Home",
-      });
-    navigation.navigate("User", {
-      screen: "Home",
-    });
-  };
-
   return {
     credentials,
     registerForm,
@@ -152,7 +131,6 @@ export default function AuthHooks() {
     error,
     user,
     formError,
-    navigation,
     handleLoginInput,
     handleRegisterInput,
     loginSubmit,

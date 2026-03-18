@@ -6,9 +6,6 @@ import { removeToken, storeToken } from "../../utils/token";
 export const login = createAsyncThunk(
   "auth/login",
   async (credentials, thunkAPI) => {
-    const userState = thunkAPI.getState().auth;
-  
-    if (userState.isLoggedIn) return;
     if (!credentials) throw new Error("missing credentials");
 
     try {
@@ -26,9 +23,6 @@ export const login = createAsyncThunk(
 export const register = createAsyncThunk(
   "auth/register",
   async (formData, thunkAPI) => {
-    const userState = thunkAPI.getState().auth;
-    if (userState.isLoggedIn) return;
-
     try {
       const result = await authService.register(formData);
       await storeToken(result.token);

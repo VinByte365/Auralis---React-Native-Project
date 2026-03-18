@@ -123,6 +123,10 @@ const useHome = () => {
     navigation.navigate("Cart");
   };
 
+  const handleOpenDrawer = () => {
+    navigation.getParent()?.openDrawer();
+  };
+
   return {
     products: filteredProducts,
     categories,
@@ -145,6 +149,7 @@ const useHome = () => {
     handleRefresh,
     handleProductClick,
     handleCartClick,
+    handleOpenDrawer,
   };
 };
 

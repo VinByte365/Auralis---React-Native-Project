@@ -17,11 +17,12 @@ const Stack = createNativeStackNavigator();
 
 export default function RootStackNavigation() {
   const userState = useSelector((state) => state.auth);
+  const hasUserIdentity = Boolean(
+    userState?.user?._id || userState?.user?.userId,
+  );
   const isBootstrapping = !userState?.bootstrapped;
   const isSignedIn =
-    userState?.bootstrapped &&
-    userState?.isLoggedIn &&
-    Boolean(userState?.user?._id);
+    userState?.bootstrapped && userState?.isLoggedIn && hasUserIdentity;
   const isSignedOut = userState?.bootstrapped && !userState?.isLoggedIn;
   // console.log(userState)
   // console.log(isBootstrapping,isSignedIn,isSignedOut)
