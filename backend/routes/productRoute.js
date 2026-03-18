@@ -1,5 +1,5 @@
 const express = require("express");
-const router = express.Router()
+const router = express.Router();
 const multer = require("multer");
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -41,17 +41,6 @@ router
   .route("/product/stocks/:productId")
   .put(authMiddleware.verifyToken, productController.updateProductStock);
 
-router.route("/catalog").get(productController.getCatalog);
-router.route("/catalog/version").get(productController.getCatalogVersion);
-
 router.route("/scan/product").get(productController.getScannedProduct);
-
-// Merchandiser-specific scan endpoint (returns found:false instead of error)
-router
-  .route("/scan/merchandiser")
-  .get(
-    authMiddleware.verifyToken,
-    productController.getMerchandiserScannedProduct,
-  );
 
 module.exports = router;

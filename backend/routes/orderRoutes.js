@@ -11,4 +11,8 @@ router
   .route("/confirmOrder")
   .post(authMiddlware.verifyToken, orderController.confirmOrder);
 
+router
+  .route("/orders/:orderId/status")
+  .put(authMiddlware.verifyToken, orderController.updateOrderStatus);
+
 module.exports = router;
