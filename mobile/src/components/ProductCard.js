@@ -8,6 +8,8 @@ import {
 } from "react-native";
 import React from "react";
 
+const productImagePlaceholder = require("../../assets/home/3.png");
+
 export default function ProductCard({ products }) {
   const renderProduct = ({ item }) => (
     <TouchableOpacity style={styles.productCard}>
@@ -15,10 +17,15 @@ export default function ProductCard({ products }) {
         {item.images?.[0]?.url ? (
           <Image
             source={{ uri: item.images[0].url }}
-            style={styles.imagePlaceholder}
+            style={styles.productImageAsset}
+            resizeMode="cover"
           />
         ) : (
-          <View style={styles.imagePlaceholder} />
+          <Image
+            source={productImagePlaceholder}
+            style={styles.productImageAsset}
+            resizeMode="contain"
+          />
         )}
       </View>
       <View style={styles.productInfo}>
@@ -81,9 +88,11 @@ const styles = StyleSheet.create({
     backgroundColor: "#fafafa",
     borderBottomWidth: 1,
     borderBottomColor: "#f0f0f0",
+    overflow: "hidden",
   },
-  imagePlaceholder: {
-    flex: 1,
+  productImageAsset: {
+    width: "100%",
+    height: "100%",
     backgroundColor: "#f5f5f5",
   },
   productInfo: {

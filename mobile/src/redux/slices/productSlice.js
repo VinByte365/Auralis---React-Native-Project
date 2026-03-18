@@ -34,7 +34,6 @@ const handleFulfilled = (state, action) => {
   state.isLoading = false;
   state.error = "";
   state.products = action.payload?.products || [];
-  state.categories = action.payload?.categories || state.categories;
   state.count = action.payload?.products?.length || 0;
   state.pagination = action.payload?.pagination || state.pagination;
 };

@@ -9,20 +9,14 @@ import { getErrorMessage } from "../../services/apiHelpers";
 export const getProducts = createAsyncThunk(
   "product/getProducts",
   async (_, { getState, rejectWithValue }) => {
-    const {
-      priceGTE,
-      priceLTE,
-      searchQuery,
-      selectedCategory,
-      selectedRating,
-    } = getState().product;
+    const { priceGTE, priceLTE, searchQuery, selectedRating } =
+      getState().product;
 
     try {
       return await fetchProducts({
         q: searchQuery,
         priceGTE,
         priceLTE,
-        categoryId: selectedCategory || undefined,
         minRating: selectedRating || undefined,
       });
     } catch (error) {

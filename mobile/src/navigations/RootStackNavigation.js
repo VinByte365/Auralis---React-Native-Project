@@ -23,8 +23,8 @@ export default function RootStackNavigation() {
     userState?.isLoggedIn &&
     Boolean(userState?.user?._id);
   const isSignedOut = userState?.bootstrapped && !userState?.isLoggedIn;
-  console.log(userState)
-  console.log(isBootstrapping,isSignedIn,isSignedOut)
+  // console.log(userState)
+  // console.log(isBootstrapping,isSignedIn,isSignedOut)
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>

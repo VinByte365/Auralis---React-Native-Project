@@ -25,11 +25,24 @@ function buildProductFormData(payload = {}) {
 }
 
 export const fetchProducts = async (filters = {}) => {
-  const response = await axiosInstance.get("/api/v1/catalog", {
+  const response = await axiosInstance.get("/api/v1/product", {
     params: filters,
   });
+  const result = unwrapResult(response);
 
-  return unwrapResult(response);
+  if (Array.isArray(result)) {
+    return {
+      products: result,
+      pagination: {
+        page: 1,
+        limit: result.length,
+        total: result.length,
+        hasMore: false,
+      },
+    };
+  }
+
+  return result;
 };
 
 export const fetchProductById = async (productId) => {

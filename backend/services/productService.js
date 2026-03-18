@@ -1,39 +1,7 @@
 const Product = require("../models/productModel");
-const Category = require("../models/categoryModel");
 const { uploadImage, deleteAssets } = require("../utils/cloundinaryUtil");
 const { createLog } = require("./activityLogsService");
 const slugify = require("slugify");
-
-function buildCatalogQuery(query = {}) {
-  const { q, categoryId, priceGTE, priceLTE } = query;
-  const filters = {
-    deletedAt: null,
-  };
-
-  if (q && q.trim()) {
-    filters.$or = [
-      { name: { $regex: q.trim(), $options: "i" } },
-      { sku: { $regex: q.trim(), $options: "i" } },
-      { barcode: { $regex: q.trim(), $options: "i" } },
-    ];
-  }
-
-  if (categoryId) {
-    filters.category = categoryId;
-  }
-
-  if (priceGTE || priceLTE) {
-    filters.price = {};
-    if (priceGTE !== undefined && priceGTE !== "") {
-      filters.price.$gte = Number(priceGTE);
-    }
-    if (priceLTE !== undefined && priceLTE !== "") {
-      filters.price.$lte = Number(priceLTE);
-    }
-  }
-
-  return filters;
-}
 
 const create = async (request) => {
   if (!request.body) throw new Error(`theres no payload`);
@@ -69,54 +37,6 @@ const create = async (request) => {
 const getAll = async (request) => {
   const products = await Product.find().populate("category");
   return products;
-};
-
-const getCatalog = async (request = {}) => {
-  const page = Math.max(Number(request.query?.page || 1), 1);
-  const limit = Math.min(Math.max(Number(request.query?.limit || 20), 1), 50);
-  const filters = buildCatalogQuery(request.query);
-
-  const [products, total, categories] = await Promise.all([
-    Product.find(filters)
-      .populate("category")
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .lean(),
-    Product.countDocuments(filters),
-    Category.find().sort({ categoryName: 1 }).lean(),
-  ]);
-
-  return {
-    products,
-    categories,
-    pagination: {
-      page,
-      limit,
-      total,
-      hasMore: page * limit < total,
-    },
-    filters: {
-      q: request.query?.q || "",
-      categoryId: request.query?.categoryId || null,
-      priceGTE: request.query?.priceGTE || "",
-      priceLTE: request.query?.priceLTE || "",
-    },
-  };
-};
-
-const getCatalogVersion = async () => {
-  const [latestProduct, count] = await Promise.all([
-    Product.findOne({ deletedAt: null })
-      .sort({ updatedAt: -1 })
-      .select("updatedAt"),
-    Product.countDocuments({ deletedAt: null }),
-  ]);
-
-  return {
-    version: latestProduct?.updatedAt || null,
-    count,
-  };
 };
 
 const getById = async (request = {}) => {
@@ -159,20 +79,6 @@ const getBarcode = async (request = {}) => {
 
   if (!product) throw new Error("product is not found");
   return product;
-};
-
-const getBarcodeForMerchandiser = async (request = {}) => {
-  const { barcode } = request.query;
-  if (!barcode) return { found: false };
-
-  const product = await Product.findOne({
-    barcode: String(barcode).trim(),
-  })
-    .populate("category")
-    .lean();
-
-  if (!product) return { found: false };
-  return { found: true, product };
 };
 
 const update = async (request = {}) => {
@@ -342,8 +248,6 @@ const updateStock = async (request) => {
 module.exports = {
   create,
   getAll,
-  getCatalog,
-  getCatalogVersion,
   getById,
   search,
   update,
@@ -353,5 +257,4 @@ module.exports = {
   restore,
   updateStock,
   getBarcode,
-  getBarcodeForMerchandiser,
 };

@@ -1,4 +1,10 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, {
+  useEffect,
+  useState,
+  useRef,
+  useCallback,
+  useMemo,
+} from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { getCategories, getProducts } from "../../redux/thunks/productThunks";
 import {
@@ -23,12 +29,26 @@ const useHome = () => {
     priceLTE,
   } = useSelector((state) => state.product);
   const cartItems = useSelector((state) => state.cart.items);
+  const [refreshing, setRefreshing] = useState(false);
   const dispatch = useDispatch();
 
-  useEffect(() => {
-    dispatch(getCategories());
-    dispatch(getProducts());
+  const fetchData = useCallback(async () => {
+    await Promise.all([
+      dispatch(getCategories()).unwrap(),
+      dispatch(getProducts()).unwrap(),
+    ]);
   }, [dispatch]);
+
+  const filteredProducts = useMemo(() => {
+    if (!selectedCategory) return products;
+    return products.filter(
+      (product) => String(product?.category?._id) === String(selectedCategory),
+    );
+  }, [products, selectedCategory]);
+
+  useEffect(() => {
+    fetchData().catch(() => {});
+  }, [fetchData]);
 
   useEffect(() => {
     if (searchTimeout.current) {
@@ -44,14 +64,7 @@ const useHome = () => {
         clearTimeout(searchTimeout.current);
       }
     };
-  }, [
-    dispatch,
-    searchQuery,
-    selectedCategory,
-    selectedRating,
-    priceGTE,
-    priceLTE,
-  ]);
+  }, [dispatch, searchQuery, selectedRating, priceGTE, priceLTE]);
 
   const handleSearch = (text) => {
     dispatch(setSearchQuery(text));
@@ -90,8 +103,18 @@ const useHome = () => {
     dispatch(clearFilters());
   };
 
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await fetchData();
+    } catch (error) {
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   return {
-    products,
+    products: filteredProducts,
     categories,
     cartCount: cartItems.reduce((sum, item) => sum + item.quantity, 0),
     isLoading,
@@ -107,6 +130,9 @@ const useHome = () => {
     handleClearAllFilters,
     handlePriceChange,
     handleClearPriceRange,
+    fetchData,
+    refreshing,
+    handleRefresh,
   };
 };
 

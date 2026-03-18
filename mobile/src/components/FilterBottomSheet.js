@@ -7,7 +7,6 @@ import {
   TouchableWithoutFeedback,
   View,
 } from "react-native";
-import CategorySelector from "./CategorySelector";
 import PriceRangeFilter from "./PriceRangeFilter";
 
 const ratingOptions = [5, 4, 3, 2, 1];
@@ -15,9 +14,6 @@ const ratingOptions = [5, 4, 3, 2, 1];
 export default function FilterBottomSheet({
   visible,
   onClose,
-  categories,
-  selectedCategory,
-  onSelectCategory,
   selectedRating,
   onSelectRating,
   minPrice,
@@ -45,15 +41,6 @@ export default function FilterBottomSheet({
                 <TouchableOpacity onPress={onClearAll}>
                   <Text style={styles.clearText}>Clear all</Text>
                 </TouchableOpacity>
-              </View>
-
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Category</Text>
-                <CategorySelector
-                  categories={categories}
-                  selectedCategory={selectedCategory}
-                  onSelectCategory={onSelectCategory}
-                />
               </View>
 
               <View style={styles.section}>

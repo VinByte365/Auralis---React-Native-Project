@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   TextInput,
   StatusBar,
+  RefreshControl,
 } from "react-native";
 import HomeCarousel from "../../components/HomeCarousel";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -18,6 +19,7 @@ import useHome from "../../hooks/user/useHome";
 export default function HomeScreen() {
   const {
     searchQuery,
+    categories,
     selectedCategory,
     selectedRating,
     handleSearch,
@@ -26,13 +28,14 @@ export default function HomeScreen() {
     handleClearAllFilters,
     handlePriceChange,
     handleClearPriceRange,
-    categories,
     products,
     cartCount,
     isLoading,
     error,
     priceGTE,
     priceLTE,
+    refreshing,
+    handleRefresh,
   } = useHome();
   const [isFilterVisible, setFilterVisible] = React.useState(false);
 
@@ -76,6 +79,9 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+        }
       >
         {/* Search Bar */}
         <View style={styles.searchContainer}>
@@ -121,6 +127,53 @@ export default function HomeScreen() {
           <HomeCarousel data={banners} />
         </View>
 
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.categoryChipsContainer}
+        >
+          <TouchableOpacity
+            style={[
+              styles.categoryChip,
+              !selectedCategory && styles.categoryChipActive,
+            ]}
+            onPress={() => handleCategoryPress(null)}
+          >
+            <Text
+              style={[
+                styles.categoryChipText,
+                !selectedCategory && styles.categoryChipTextActive,
+              ]}
+            >
+              All
+            </Text>
+          </TouchableOpacity>
+
+          {categories.map((category) => {
+            const isActive = selectedCategory === category?._id;
+
+            return (
+              <TouchableOpacity
+                key={category._id}
+                style={[
+                  styles.categoryChip,
+                  isActive && styles.categoryChipActive,
+                ]}
+                onPress={() => handleCategoryPress(category._id)}
+              >
+                <Text
+                  style={[
+                    styles.categoryChipText,
+                    isActive && styles.categoryChipTextActive,
+                  ]}
+                >
+                  {category.categoryName}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+
         {/* Featured Products */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -157,9 +210,6 @@ export default function HomeScreen() {
       <FilterBottomSheet
         visible={isFilterVisible}
         onClose={() => setFilterVisible(false)}
-        categories={categories}
-        selectedCategory={selectedCategory}
-        onSelectCategory={handleCategoryPress}
         selectedRating={selectedRating}
         onSelectRating={handleRatingPress}
         minPrice={priceGTE}
@@ -254,6 +304,32 @@ const styles = StyleSheet.create({
   },
   carouselContainer: {
     marginTop: 16,
+  },
+  categoryChipsContainer: {
+    paddingHorizontal: 20,
+    paddingTop: 14,
+    paddingBottom: 4,
+  },
+  categoryChip: {
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
+    marginRight: 10,
+    backgroundColor: "#fff",
+  },
+  categoryChipActive: {
+    backgroundColor: "#000",
+    borderColor: "#000",
+  },
+  categoryChipText: {
+    fontSize: 13,
+    color: "#333",
+    fontWeight: "500",
+  },
+  categoryChipTextActive: {
+    color: "#fff",
   },
   section: {
     marginTop: 24,
