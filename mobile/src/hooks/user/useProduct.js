@@ -9,6 +9,10 @@ const useProduct = (productId) => {
   const [suggestedProducts, setSuggestedProducts] = useState([]);
   const [canReview, setCanReview] = useState(false);
   const { productDetails, isLoading } = useSelector((state) => state.product);
+  const [isLiked, setIsLiked] = useState(false);
+  const [showReviewEditor, setShowReviewEditor] = useState(false);
+  const [reviewEditorMode, setReviewEditorMode] = useState("add");
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const {
     orders,
     isLoading: orderLoading,
@@ -31,10 +35,10 @@ const useProduct = (productId) => {
 
   useEffect(() => {
     if (productIds.includes(productId)) setCanReview(true);
+    console.log("reviews", reviews);
+    console.log("can Review", canReview);
   }, [orders, productIds]);
 
-  console.log("reviews", reviews)
-  console.log("can Review", canReview);
   useEffect(() => {
     let isMounted = true;
 
@@ -82,6 +86,64 @@ const useProduct = (productId) => {
     ).toFixed(2);
   }, [productDetails]);
 
+  const openAddReviewEditor = () => {
+    if (!canReview) return;
+    setReviewEditorMode("add");
+    setShowReviewEditor(true);
+  };
+
+  const handleReviewSubmit = async ({ rating, comment }) => {
+    try {
+      setIsSubmittingReview(true);
+
+      await new Promise((resolve) => setTimeout(resolve, 400));
+
+      Alert.alert(
+        reviewEditorMode === "update"
+          ? "Mock review updated"
+          : "Mock review submitted",
+        `Rating: ${rating}\nComment: ${comment}`,
+      );
+      setShowReviewEditor(false);
+    } finally {
+      setIsSubmittingReview(false);
+    }
+  };
+
+  const handleAddToCart = async () => {
+    if (!productDetails?._id) return;
+
+    try {
+      await dispatch(
+        addToCart({ product: productDetails, quantity: 1 }),
+      ).unwrap();
+      Alert.alert(
+        "Added to cart",
+        `${productDetails.name} was added to your cart.`,
+      );
+    } catch (error) {
+      Alert.alert(
+        "Unable to add",
+        error?.error || error?.message || "Please try again.",
+      );
+    }
+  };
+
+  const handleOrderNow = async () => {
+    if (!productDetails?._id) return;
+
+    try {
+      await dispatch(
+        addToCart({ product: productDetails, quantity: 1 }),
+      ).unwrap();
+      navigation.navigate("Cart");
+    } catch (error) {
+      Alert.alert(
+        "Unable to order",
+        error?.error || error?.message || "Please try again.",
+      );
+    }
+  };
   return {
     productDetails,
     isLoading,
@@ -91,6 +153,17 @@ const useProduct = (productId) => {
     reviewError,
     suggestedProducts,
     displayPrice,
+    canReview,
+    isLiked,
+    showReviewEditor,
+    reviewEditorMode,
+    isSubmittingReview,
+    setShowReviewEditor,
+    setIsLiked,
+    handleAddToCart,
+    handleOrderNow,
+    handleReviewSubmit,
+    openAddReviewEditor,
   };
 };
 

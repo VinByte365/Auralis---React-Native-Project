@@ -21,39 +21,8 @@ import { addToCart } from "../../redux/thunks/cartThunks";
 
 const productImagePlaceholder = require("../../../assets/home/3.png");
 
-const MOCK_REVIEW_SUMMARY = {
-  averageRating: "4.7",
-  totalReviews: 3,
-};
-
-const MOCK_REVIEWS = [
-  {
-    _id: "mock-review-1",
-    user: { name: "Aira" },
-    rating: 5,
-    comment: "Great sound quality and very comfy for daily use.",
-  },
-  {
-    _id: "mock-review-2",
-    user: { name: "Levi" },
-    rating: 4,
-    comment: "Battery life is solid. Worth the price.",
-  },
-  {
-    _id: "mock-review-3",
-    user: { name: "Mika" },
-    rating: 5,
-    comment: "Fast delivery and the product feels premium.",
-  },
-];
-
 export default function ProductScreen({ route, navigation }) {
   const productId = route?.params?.productId;
-  const dispatch = useDispatch();
-  const [isLiked, setIsLiked] = React.useState(false);
-  const [showReviewEditor, setShowReviewEditor] = React.useState(false);
-  const [reviewEditorMode, setReviewEditorMode] = React.useState("add");
-  const [isSubmittingReview, setIsSubmittingReview] = React.useState(false);
   const {
     productDetails,
     isLoading,
@@ -63,77 +32,23 @@ export default function ProductScreen({ route, navigation }) {
     reviewError,
     suggestedProducts,
     displayPrice,
+    canReview,
+    isLiked,
+    showReviewEditor,
+    reviewEditorMode,
+    isSubmittingReview,
+    setShowReviewEditor,
+    setIsLiked,
+    handleAddToCart,
+    handleOrderNow,
+    handleReviewSubmit,
+    openAddReviewEditor,
   } = useProduct(productId);
 
-  const hasLiveReviews = Array.isArray(reviews) && reviews.length > 0;
-  const reviewSectionSummary = hasLiveReviews ? summary : MOCK_REVIEW_SUMMARY;
-  const reviewSectionData = hasLiveReviews ? reviews : MOCK_REVIEWS;
-  const reviewSectionLoading = hasLiveReviews ? reviewLoading : false;
-  const reviewSectionError = hasLiveReviews ? reviewError : "";
-  const selectedMockReview = reviewSectionData[0] || null;
-
-  const openAddReviewEditor = () => {
-    setReviewEditorMode("add");
-    setShowReviewEditor(true);
-  };
-
-  const openUpdateReviewEditor = () => {
-    setReviewEditorMode("update");
-    setShowReviewEditor(true);
-  };
-
-  const handleReviewSubmit = async ({ rating, comment }) => {
-    try {
-      setIsSubmittingReview(true);
-
-      await new Promise((resolve) => setTimeout(resolve, 400));
-
-      Alert.alert(
-        reviewEditorMode === "update"
-          ? "Mock review updated"
-          : "Mock review submitted",
-        `Rating: ${rating}\nComment: ${comment}`,
-      );
-      setShowReviewEditor(false);
-    } finally {
-      setIsSubmittingReview(false);
-    }
-  };
-
-  const handleAddToCart = async () => {
-    if (!productDetails?._id) return;
-
-    try {
-      await dispatch(
-        addToCart({ product: productDetails, quantity: 1 }),
-      ).unwrap();
-      Alert.alert(
-        "Added to cart",
-        `${productDetails.name} was added to your cart.`,
-      );
-    } catch (error) {
-      Alert.alert(
-        "Unable to add",
-        error?.error || error?.message || "Please try again.",
-      );
-    }
-  };
-
-  const handleOrderNow = async () => {
-    if (!productDetails?._id) return;
-
-    try {
-      await dispatch(
-        addToCart({ product: productDetails, quantity: 1 }),
-      ).unwrap();
-      navigation.navigate("Cart");
-    } catch (error) {
-      Alert.alert(
-        "Unable to order",
-        error?.error || error?.message || "Please try again.",
-      );
-    }
-  };
+  const reviewSectionSummary = summary;
+  const reviewSectionData = Array.isArray(reviews) ? reviews : [];
+  const reviewSectionLoading = reviewLoading;
+  const reviewSectionError = reviewError;
 
   if (!productId) {
     return (
@@ -236,16 +151,6 @@ export default function ProductScreen({ route, navigation }) {
               }
             />
 
-            <TouchableOpacity
-              style={styles.mockUpdateButton}
-              onPress={openUpdateReviewEditor}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.mockUpdateButtonText}>
-                Mock: Edit my review
-              </Text>
-            </TouchableOpacity>
-
             <Text style={[styles.sectionTitle, styles.suggestionsTitle]}>
               You may also like
             </Text>
@@ -323,24 +228,11 @@ export default function ProductScreen({ route, navigation }) {
             <View style={styles.modalHandle} />
             <ProductReviewEditor
               mode={reviewEditorMode}
-              initialRating={
-                reviewEditorMode === "update" ? selectedMockReview?.rating : 0
-              }
-              initialComment={
-                reviewEditorMode === "update"
-                  ? selectedMockReview?.comment || ""
-                  : ""
-              }
+              initialRating={0}
+              initialComment=""
               isSubmitting={isSubmittingReview}
-              showDelete={reviewEditorMode === "update"}
+              showDelete={false}
               onCancel={() => setShowReviewEditor(false)}
-              onDelete={() => {
-                Alert.alert(
-                  "Mock delete",
-                  "Connect your delete-review logic here.",
-                );
-                setShowReviewEditor(false);
-              }}
               onSubmit={handleReviewSubmit}
             />
           </View>
@@ -553,20 +445,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     paddingHorizontal: 2,
     marginBottom: 4,
-  },
-  mockUpdateButton: {
-    alignSelf: "flex-start",
-    marginTop: 2,
-    marginBottom: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    backgroundColor: "#f4f4f4",
-  },
-  mockUpdateButtonText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#333",
   },
   modalBackdrop: {
     flex: 1,
