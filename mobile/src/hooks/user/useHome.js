@@ -119,6 +119,10 @@ const useHome = () => {
     navigation.navigate("Product", { productId });
   };
 
+  const handleCartClick = () => {
+    navigation.navigate("Cart");
+  };
+
   return {
     products: filteredProducts,
     categories,
@@ -140,6 +144,7 @@ const useHome = () => {
     refreshing,
     handleRefresh,
     handleProductClick,
+    handleCartClick,
   };
 };
 

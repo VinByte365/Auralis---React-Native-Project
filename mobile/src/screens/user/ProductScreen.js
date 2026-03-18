@@ -59,10 +59,7 @@ export default function ProductScreen({ route, navigation }) {
       await dispatch(
         addToCart({ product: productDetails, quantity: 1 }),
       ).unwrap();
-      Alert.alert(
-        "Ready to order",
-        "Item added to cart. Continue checkout from your cart.",
-      );
+      navigation.navigate("Cart");
     } catch (error) {
       Alert.alert(
         "Unable to order",

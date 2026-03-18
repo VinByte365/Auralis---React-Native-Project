@@ -36,7 +36,8 @@ export default function HomeScreen() {
     priceLTE,
     refreshing,
     handleRefresh,
-    handleProductClick
+    handleProductClick,
+    handleCartClick,
   } = useHome();
   const [isFilterVisible, setFilterVisible] = React.useState(false);
 
@@ -61,7 +62,7 @@ export default function HomeScreen() {
               color="#333"
             />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton}>
+          <TouchableOpacity style={styles.iconButton} onPress={handleCartClick}>
             <MaterialCommunityIcons
               name="cart-outline"
               size={24}
