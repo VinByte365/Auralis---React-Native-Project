@@ -37,10 +37,18 @@ export default function ProductScreen({ route, navigation }) {
     if (!productDetails?._id) return;
 
     try {
-      await dispatch(addToCart({ product: productDetails, quantity: 1 })).unwrap();
-      Alert.alert("Added to cart", `${productDetails.name} was added to your cart.`);
+      await dispatch(
+        addToCart({ product: productDetails, quantity: 1 }),
+      ).unwrap();
+      Alert.alert(
+        "Added to cart",
+        `${productDetails.name} was added to your cart.`,
+      );
     } catch (error) {
-      Alert.alert("Unable to add", error?.error || error?.message || "Please try again.");
+      Alert.alert(
+        "Unable to add",
+        error?.error || error?.message || "Please try again.",
+      );
     }
   };
 
@@ -48,13 +56,18 @@ export default function ProductScreen({ route, navigation }) {
     if (!productDetails?._id) return;
 
     try {
-      await dispatch(addToCart({ product: productDetails, quantity: 1 })).unwrap();
+      await dispatch(
+        addToCart({ product: productDetails, quantity: 1 }),
+      ).unwrap();
       Alert.alert(
         "Ready to order",
         "Item added to cart. Continue checkout from your cart.",
       );
     } catch (error) {
-      Alert.alert("Unable to order", error?.error || error?.message || "Please try again.");
+      Alert.alert(
+        "Unable to order",
+        error?.error || error?.message || "Please try again.",
+      );
     }
   };
 
@@ -84,7 +97,7 @@ export default function ProductScreen({ route, navigation }) {
         <View style={styles.headerSpacer} />
       </View>
 
-      <ScrollView 
+      <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
@@ -131,7 +144,9 @@ export default function ProductScreen({ route, navigation }) {
                 </Text>
               </View>
               <View style={styles.metaItem}>
-                <Text style={styles.metaText}>{productDetails.unit || "pc"}</Text>
+                <Text style={styles.metaText}>
+                  {productDetails.unit || "pc"}
+                </Text>
               </View>
             </View>
 
@@ -184,8 +199,8 @@ export default function ProductScreen({ route, navigation }) {
             {suggestedProducts.length === 0 ? (
               <Text style={styles.helperText}>No suggestions available.</Text>
             ) : (
-              <ScrollView 
-                horizontal 
+              <ScrollView
+                horizontal
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.suggestionsContainer}
               >
@@ -194,7 +209,8 @@ export default function ProductScreen({ route, navigation }) {
                     key={item._id}
                     style={[
                       styles.suggestionCard,
-                      index === suggestedProducts.length - 1 && styles.lastSuggestionCard
+                      index === suggestedProducts.length - 1 &&
+                        styles.lastSuggestionCard,
                     ]}
                     onPress={() =>
                       navigation.push("Product", { productId: item._id })
