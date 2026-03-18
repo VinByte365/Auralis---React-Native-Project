@@ -5,16 +5,16 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from "react-native";
-import React, { useState } from "react";
+import React from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AuthHooks from "../../hooks/AuthHooks";
 
-export default function LoginScreen({}) {
+export default function LoginScreen() {
   const {
     credentials,
     isLoggedIn,
     loading,
-    error,
+    formError,
     navigation,
     handleLoginInput,
     loginSubmit,
@@ -27,7 +27,7 @@ export default function LoginScreen({}) {
         <Text style={styles.subtitle}>Sign in to continue</Text>
 
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Username or Email</Text>
+          <Text style={styles.label}>Email</Text>
           <TextInput
             style={styles.input}
             onChangeText={(value) => handleLoginInput("email", value)}
@@ -37,38 +37,45 @@ export default function LoginScreen({}) {
             keyboardType="email-address"
             autoCapitalize="none"
           />
+          {formError?.email && (
+            <Text style={styles.formError}>{formError.email}</Text>
+          )}
         </View>
 
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>{"Password"}</Text>
+          <Text style={styles.label}>Password</Text>
           <TextInput
             style={styles.input}
             onChangeText={(value) => handleLoginInput("password", value)}
             value={credentials.password}
-            secureTextEntry={true}
+            secureTextEntry
             placeholder="Enter your password"
             placeholderTextColor="#888"
           />
+          {formError?.password && (
+            <Text style={styles.formError}>{formError.password}</Text>
+          )}
         </View>
 
-        <TouchableOpacity style={styles.loginButton} onPress={loginSubmit}>
-          <Text style={styles.loginText}>Login</Text>
+        <TouchableOpacity style={styles.primaryButton} onPress={loginSubmit}>
+          <Text style={styles.primaryText}>
+            {loading ? "Signing In..." : "Login"}
+          </Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.googleButton}>
-          <Text style={styles.googleText}>Continue with Google</Text>
+
+        <TouchableOpacity style={styles.secondaryButton}>
+          <Text style={styles.secondaryText}>Continue with Google</Text>
         </TouchableOpacity>
+
         <Text style={styles.registerText}>
           Don't have an account?{" "}
           <Text
-            style={{
-              color: "#000",
-              fontWeight: "600",
-            }}
-            onPress={() => {
+            style={styles.registerLink}
+            onPress={() =>
               navigation.navigate("auth", {
                 screen: "Register",
-              });
-            }}
+              })
+            }
           >
             Sign up
           </Text>
@@ -90,7 +97,7 @@ const styles = StyleSheet.create({
   formCard: {
     width: "100%",
     maxWidth: 400,
-    backgroundColor: "#ffffff",
+    backgroundColor: "#fff",
     padding: 28,
     borderRadius: 12,
     borderWidth: 1,
@@ -101,17 +108,17 @@ const styles = StyleSheet.create({
     fontSize: 26,
     fontWeight: "700",
     color: "#000",
-    marginBottom: 4,
   },
 
   subtitle: {
     fontSize: 14,
     color: "#666",
+    marginTop: 4,
     marginBottom: 28,
   },
 
   inputGroup: {
-    marginBottom: 18,
+    marginBottom: 16,
   },
 
   label: {
@@ -132,40 +139,52 @@ const styles = StyleSheet.create({
     backgroundColor: "#fafafa",
   },
 
-  loginButton: {
-    marginTop: 12,
+  primaryButton: {
+    marginTop: 10,
     backgroundColor: "#000",
     paddingVertical: 14,
     borderRadius: 8,
     alignItems: "center",
+    width: "100%",
   },
 
-  loginText: {
+  primaryText: {
     color: "#fff",
     fontSize: 15,
     fontWeight: "600",
   },
 
-  googleButton: {
+  secondaryButton: {
     marginTop: 12,
     borderWidth: 1,
     borderColor: "#000",
     paddingVertical: 14,
     borderRadius: 8,
     alignItems: "center",
-    backgroundColor: "#fff",
+    width: "100%",
   },
 
-  googleText: {
+  secondaryText: {
     color: "#000",
     fontSize: 15,
     fontWeight: "600",
   },
 
+  formError: {
+    marginBottom: 8,
+    color: "red",
+    fontSize: 12,
+  },
+
   registerText: {
-    marginTop: 15,
-    color: "#000",
+    marginTop: 20,
     fontSize: 13,
     textAlign: "center",
+    color: "#444",
+  },
+
+  registerLink: {
+    fontWeight: "600",
+    color: "#000",
   },
 });
