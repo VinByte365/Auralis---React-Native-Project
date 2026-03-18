@@ -3,10 +3,17 @@ import { useDispatch, useSelector } from "react-redux";
 import { getProductDetails } from "../../redux/thunks/productThunks";
 import { getProductReviews } from "../../redux/thunks/reviewThunks";
 import { fetchProducts } from "../../services/productService";
+import { getOrders } from "../../redux/thunks/orderThunks";
 
 const useProduct = (productId) => {
   const [suggestedProducts, setSuggestedProducts] = useState([]);
+  const [canReview, setCanReview] = useState(false);
   const { productDetails, isLoading } = useSelector((state) => state.product);
+  const {
+    orders,
+    isLoading: orderLoading,
+    productIds,
+  } = useSelector((state) => state.order);
   const {
     reviews,
     summary,
@@ -17,11 +24,17 @@ const useProduct = (productId) => {
 
   useEffect(() => {
     if (!productId) return;
-
+    dispatch(getOrders());
     dispatch(getProductDetails(productId));
     dispatch(getProductReviews(productId));
   }, [dispatch, productId]);
 
+  useEffect(() => {
+    if (productIds.includes(productId)) setCanReview(true);
+  }, [orders, productIds]);
+
+  console.log("reviews", reviews)
+  console.log("can Review", canReview);
   useEffect(() => {
     let isMounted = true;
 

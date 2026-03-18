@@ -2,6 +2,7 @@ import React from "react";
 import {
   Alert,
   Image,
+  Modal,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -13,15 +14,46 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import useProduct from "../../hooks/user/useProduct";
 import ProductActionBar from "../../components/ProductActionBar";
+import ProductReviewSection from "../../components/ProductReviewSection";
+import ProductReviewEditor from "../../components/ProductReviewEditor";
 import { useDispatch } from "react-redux";
 import { addToCart } from "../../redux/thunks/cartThunks";
 
 const productImagePlaceholder = require("../../../assets/home/3.png");
 
+const MOCK_REVIEW_SUMMARY = {
+  averageRating: "4.7",
+  totalReviews: 3,
+};
+
+const MOCK_REVIEWS = [
+  {
+    _id: "mock-review-1",
+    user: { name: "Aira" },
+    rating: 5,
+    comment: "Great sound quality and very comfy for daily use.",
+  },
+  {
+    _id: "mock-review-2",
+    user: { name: "Levi" },
+    rating: 4,
+    comment: "Battery life is solid. Worth the price.",
+  },
+  {
+    _id: "mock-review-3",
+    user: { name: "Mika" },
+    rating: 5,
+    comment: "Fast delivery and the product feels premium.",
+  },
+];
+
 export default function ProductScreen({ route, navigation }) {
   const productId = route?.params?.productId;
   const dispatch = useDispatch();
   const [isLiked, setIsLiked] = React.useState(false);
+  const [showReviewEditor, setShowReviewEditor] = React.useState(false);
+  const [reviewEditorMode, setReviewEditorMode] = React.useState("add");
+  const [isSubmittingReview, setIsSubmittingReview] = React.useState(false);
   const {
     productDetails,
     isLoading,
@@ -32,6 +64,41 @@ export default function ProductScreen({ route, navigation }) {
     suggestedProducts,
     displayPrice,
   } = useProduct(productId);
+
+  const hasLiveReviews = Array.isArray(reviews) && reviews.length > 0;
+  const reviewSectionSummary = hasLiveReviews ? summary : MOCK_REVIEW_SUMMARY;
+  const reviewSectionData = hasLiveReviews ? reviews : MOCK_REVIEWS;
+  const reviewSectionLoading = hasLiveReviews ? reviewLoading : false;
+  const reviewSectionError = hasLiveReviews ? reviewError : "";
+  const selectedMockReview = reviewSectionData[0] || null;
+
+  const openAddReviewEditor = () => {
+    setReviewEditorMode("add");
+    setShowReviewEditor(true);
+  };
+
+  const openUpdateReviewEditor = () => {
+    setReviewEditorMode("update");
+    setShowReviewEditor(true);
+  };
+
+  const handleReviewSubmit = async ({ rating, comment }) => {
+    try {
+      setIsSubmittingReview(true);
+
+      await new Promise((resolve) => setTimeout(resolve, 400));
+
+      Alert.alert(
+        reviewEditorMode === "update"
+          ? "Mock review updated"
+          : "Mock review submitted",
+        `Rating: ${rating}\nComment: ${comment}`,
+      );
+      setShowReviewEditor(false);
+    } finally {
+      setIsSubmittingReview(false);
+    }
+  };
 
   const handleAddToCart = async () => {
     if (!productDetails?._id) return;
@@ -153,41 +220,31 @@ export default function ProductScreen({ route, navigation }) {
                 "No description available."}
             </Text>
 
-            <View style={styles.reviewHeaderRow}>
-              <Text style={styles.sectionTitle}>Reviews</Text>
-              <Text style={styles.reviewSummary}>
-                {summary?.averageRating || "0.0"} ★ (
-                {summary?.totalReviews || 0})
+            <ProductReviewSection
+              title="Reviews"
+              summary={reviewSectionSummary}
+              reviews={reviewSectionData}
+              isLoading={reviewSectionLoading}
+              error={reviewSectionError}
+              maxItems={5}
+              onPressWriteReview={openAddReviewEditor}
+              onPressViewAll={() =>
+                Alert.alert(
+                  "View all reviews",
+                  "Connect your full reviews screen here.",
+                )
+              }
+            />
+
+            <TouchableOpacity
+              style={styles.mockUpdateButton}
+              onPress={openUpdateReviewEditor}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.mockUpdateButtonText}>
+                Mock: Edit my review
               </Text>
-            </View>
-
-            {reviewLoading ? (
-              <Text style={styles.helperText}>Loading reviews...</Text>
-            ) : null}
-
-            {!reviewLoading && reviewError ? (
-              <Text style={styles.errorText}>{reviewError}</Text>
-            ) : null}
-
-            {!reviewLoading && !reviewError && reviews.length === 0 ? (
-              <Text style={styles.helperText}>No reviews yet.</Text>
-            ) : null}
-
-            {!reviewLoading && !reviewError && reviews.length > 0
-              ? reviews.slice(0, 5).map((review) => (
-                  <View style={styles.reviewCard} key={review._id}>
-                    <View style={styles.reviewTopRow}>
-                      <Text style={styles.reviewUser}>
-                        {review.user?.name || "User"}
-                      </Text>
-                      <Text style={styles.reviewRating}>{review.rating} ★</Text>
-                    </View>
-                    <Text style={styles.reviewComment}>
-                      {review.comment?.trim() || "No comment"}
-                    </Text>
-                  </View>
-                ))
-              : null}
+            </TouchableOpacity>
 
             <Text style={[styles.sectionTitle, styles.suggestionsTitle]}>
               You may also like
@@ -248,6 +305,47 @@ export default function ProductScreen({ route, navigation }) {
           onOrderNow={handleOrderNow}
         />
       ) : null}
+
+      <Modal
+        visible={showReviewEditor}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowReviewEditor(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <TouchableOpacity
+            style={styles.modalCloseArea}
+            onPress={() => setShowReviewEditor(false)}
+            activeOpacity={1}
+          />
+
+          <View style={styles.modalSheet}>
+            <View style={styles.modalHandle} />
+            <ProductReviewEditor
+              mode={reviewEditorMode}
+              initialRating={
+                reviewEditorMode === "update" ? selectedMockReview?.rating : 0
+              }
+              initialComment={
+                reviewEditorMode === "update"
+                  ? selectedMockReview?.comment || ""
+                  : ""
+              }
+              isSubmitting={isSubmittingReview}
+              showDelete={reviewEditorMode === "update"}
+              onCancel={() => setShowReviewEditor(false)}
+              onDelete={() => {
+                Alert.alert(
+                  "Mock delete",
+                  "Connect your delete-review logic here.",
+                );
+                setShowReviewEditor(false);
+              }}
+              onSubmit={handleReviewSubmit}
+            />
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -455,5 +553,43 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     paddingHorizontal: 2,
     marginBottom: 4,
+  },
+  mockUpdateButton: {
+    alignSelf: "flex-start",
+    marginTop: 2,
+    marginBottom: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: "#f4f4f4",
+  },
+  mockUpdateButtonText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#333",
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.35)",
+    justifyContent: "flex-end",
+  },
+  modalCloseArea: {
+    flex: 1,
+  },
+  modalSheet: {
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: 22,
+  },
+  modalHandle: {
+    alignSelf: "center",
+    width: 42,
+    height: 4,
+    borderRadius: 999,
+    backgroundColor: "#d7d7d7",
+    marginBottom: 10,
   },
 });
