@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { login, register } from "../redux/thunks/authThunk";
+import { useNavigation } from "@react-navigation/native";
 
 export default function AuthHooks() {
   const [credentials, setCredentials] = useState({
@@ -12,6 +13,8 @@ export default function AuthHooks() {
     password: "",
     email: "",
   });
+
+const navigation = useNavigation();
 
   const [formError, setFormError] = useState({});
   const { loading, user, error, isLoggedIn } = useSelector(
@@ -26,6 +29,8 @@ export default function AuthHooks() {
   const handleRegisterInput = (field, value) => {
     setRegisterForm({ ...registerForm, [field]: value });
   };
+
+
 
   const loginRules = {
     email: {
@@ -135,5 +140,6 @@ export default function AuthHooks() {
     handleRegisterInput,
     loginSubmit,
     registerSubmit,
+    navigation
   };
 }
