@@ -7,7 +7,7 @@ const Review = require("../models/reviewModel");
 async function ensureVerifiedPurchase(productId, userId) {
   const verifiedOrder = await Order.findOne({
     user: userId,
-    status: { $in: ["CONFIRMED", "PROCESSING", "COMPLETED"] },
+    status:"COMPLETED",
     "items.product": productId,
   }).select("_id");
 
@@ -24,7 +24,7 @@ exports.listByProduct = async (request = {}) => {
     throw new Error("invalid product id");
   }
 
-  const [reviews, stats] = await Promise.all([
+  const [reviews, stats, canReview] = await Promise.all([
     Review.find({ product: productId })
       .populate("user", "name avatar")
       .sort({ createdAt: -1 })

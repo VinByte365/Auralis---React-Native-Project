@@ -5,6 +5,7 @@ export const fetchProductReviews = async (productId) => {
   const response = await axiosInstance.get(
     `/api/v1/reviews/product/${productId}`,
   );
+  // console.log(response.data)
   return unwrapResult(response);
 };
 
