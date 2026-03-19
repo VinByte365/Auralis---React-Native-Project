@@ -1,209 +1,157 @@
-import React, { useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import React, { useEffect, useMemo, useState } from "react";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { FlashList } from "@shopify/flash-list";
 import { useNavigation } from "@react-navigation/native";
+import { useDispatch, useSelector } from "react-redux";
+import { COLORS, FONT, RADIUS, SHADOW, SPACING } from "../../../constants/adminTheme";
 import {
-  COLORS,
-  SPACING,
-  RADIUS,
-  FONT,
-  SHADOW,
-} from "../../../constants/adminTheme";
+  changeUserRole,
+  getAdminUsersData,
+  removeUser,
+} from "../../../redux/thunks/adminThunks";
 import AppHeader from "../components/AppHeader";
-import SearchBar from "../components/SearchBar";
-import StatusChip from "../components/StatusChip";
 import ConfirmDialog from "../components/ConfirmDialog";
 import EmptyState from "../components/EmptyState";
+import LoadingSpinner from "../components/LoadingSpinner";
+import SearchBar from "../components/SearchBar";
+import StatusChip from "../components/StatusChip";
 
-const MOCK_USERS = [
-  {
-    id: 1,
-    name: "Melvin Catuera",
-    email: "melvin@admin.com",
-    role: "Admin",
-    status: "Active",
-    joined: "Jan 10, 2026",
-  },
-  {
-    id: 2,
-    name: "Juan Dela Cruz",
-    email: "juan@email.com",
-    role: "Customer",
-    status: "Active",
-    joined: "Jan 15, 2026",
-  },
-  {
-    id: 3,
-    name: "Pedro Reyes",
-    email: "pedro@staff.com",
-    role: "Staff",
-    status: "Active",
-    joined: "Feb 02, 2026",
-  },
-  {
-    id: 4,
-    name: "Maria Santos",
-    email: "maria@email.com",
-    role: "Customer",
-    status: "Inactive",
-    joined: "Feb 12, 2026",
-  },
-  {
-    id: 5,
-    name: "Ana Garcia",
-    email: "ana@email.com",
-    role: "Customer",
-    status: "Active",
-    joined: "Feb 20, 2026",
-  },
-  {
-    id: 6,
-    name: "Luis Ramos",
-    email: "luis@email.com",
-    role: "Customer",
-    status: "Active",
-    joined: "Mar 01, 2026",
-  },
-];
+const FILTER_OPTIONS = ["All", "Admin", "User"];
 
-const FILTER_OPTIONS = ["All", "Admin", "Staff", "Customer"];
+function toLabel(roleValue) {
+  const normalized = String(roleValue || "").toLowerCase();
+  if (normalized === "admin") return "Admin";
+  return "User";
+}
+
+function formatDate(value) {
+  if (!value) return "Unknown date";
+  try {
+    return new Date(value).toLocaleDateString();
+  } catch {
+    return String(value);
+  }
+}
 
 export default function UserList() {
   const navigation = useNavigation();
+  const dispatch = useDispatch();
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState("All");
   const [deleteTarget, setDeleteTarget] = useState(null);
 
-  const filtered = MOCK_USERS.filter((u) => {
-    const matchSearch =
-      u.name.toLowerCase().includes(search.toLowerCase()) ||
-      u.email.toLowerCase().includes(search.toLowerCase());
-    const matchFilter = activeFilter === "All" || u.role === activeFilter;
-    return matchSearch && matchFilter;
-  });
+  const { list, loading } = useSelector((state) => state.admin.users);
 
-  const getRoleStatusChip = (role) => {
-    return role.toLowerCase() === "admin"
-      ? "Admin"
-      : role.toLowerCase() === "staff"
-        ? "Staff"
-        : "Customer";
-  };
+  useEffect(() => {
+    dispatch(getAdminUsersData());
+  }, [dispatch]);
 
-  const renderItem = ({ item }) => (
-    <View style={styles.card}>
-      <View style={styles.userInfo}>
-        <View
-          style={[
-            styles.avatar,
-            item.role === "Admin" && { backgroundColor: COLORS.primary + "30" },
-          ]}
-        >
-          <Text
-            style={[
-              styles.avatarText,
-              item.role === "Admin" && { color: COLORS.primary },
-            ]}
-          >
-            {item.name[0]}
-          </Text>
-        </View>
-        <View style={styles.info}>
-          <Text style={styles.name}>{item.name}</Text>
-          <Text style={styles.email}>{item.email}</Text>
-          <Text style={styles.joined}>Joined {item.joined}</Text>
-        </View>
-        <View style={styles.badges}>
-          <StatusChip status={getRoleStatusChip(item.role)} size="sm" />
-          <View style={{ marginTop: SPACING.xs }}>
-            <StatusChip status={item.status} size="sm" />
+  const filtered = useMemo(() => {
+    const query = search.toLowerCase();
+    return list.filter((user) => {
+      const roleLabel = toLabel(user?.role);
+      const matchSearch =
+        String(user?.name || "").toLowerCase().includes(query) ||
+        String(user?.email || "").toLowerCase().includes(query);
+      const matchFilter = activeFilter === "All" || roleLabel === activeFilter;
+      return matchSearch && matchFilter;
+    });
+  }, [activeFilter, list, search]);
+
+  const renderItem = ({ item }) => {
+    const roleLabel = toLabel(item?.role);
+    const isAdmin = roleLabel === "Admin";
+    const nextRole = isAdmin ? "user" : "admin";
+    return (
+      <View style={styles.card}>
+        <View style={styles.userInfo}>
+          <View style={[styles.avatar, isAdmin && { backgroundColor: COLORS.primary + "30" }]}>
+            <Text style={[styles.avatarText, isAdmin && { color: COLORS.primary }]}>
+              {String(item?.name || "U")[0]}
+            </Text>
+          </View>
+          <View style={styles.info}>
+            <Text style={styles.name}>{item?.name || "Unknown User"}</Text>
+            <Text style={styles.email}>{item?.email || "No email"}</Text>
+            <Text style={styles.joined}>Joined {formatDate(item?.createdAt)}</Text>
+          </View>
+          <View style={styles.badges}>
+            <StatusChip status={roleLabel} size="sm" />
+            <View style={{ marginTop: SPACING.xs }}>
+              <StatusChip status={item?.status || "Active"} size="sm" />
+            </View>
           </View>
         </View>
-      </View>
-      <View style={styles.actions}>
-        <TouchableOpacity style={styles.editBtn}>
-          <Text style={styles.editText}>Edit Role</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.deleteBtn}
-          onPress={() => setDeleteTarget(item)}
-          disabled={item.role === "Admin"}
-        >
-          <Text
-            style={[
-              styles.deleteText,
-              item.role === "Admin" && styles.deleteTextDisabled,
-            ]}
+        <View style={styles.actions}>
+          <TouchableOpacity
+            style={styles.editBtn}
+            onPress={() => dispatch(changeUserRole({ userId: item?._id, role: nextRole }))}
           >
-            Disable User
-          </Text>
-        </TouchableOpacity>
+            <Text style={styles.editText}>{`Set as ${nextRole}`}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.deleteBtn}
+            onPress={() => setDeleteTarget(item)}
+            disabled={isAdmin}
+          >
+            <Text style={[styles.deleteText, isAdmin && styles.deleteTextDisabled]}>Delete User</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-    </View>
-  );
+    );
+  };
 
   return (
     <View style={styles.root}>
-      <AppHeader
-        title="User Management"
-        subtitle={`${MOCK_USERS.length} total users`}
-        navigation={navigation}
-      />
+      <AppHeader title="User Management" subtitle={`${list.length} total users`} navigation={navigation} />
       <SearchBar
         placeholder="Search by name or email..."
         value={search}
         onChangeText={setSearch}
       />
 
-      {/* Filter Chips */}
       <View style={styles.filterRow}>
-        {FILTER_OPTIONS.map((f) => (
+        {FILTER_OPTIONS.map((filter) => (
           <TouchableOpacity
-            key={f}
-            style={[
-              styles.filterChip,
-              activeFilter === f && styles.filterChipActive,
-            ]}
-            onPress={() => setActiveFilter(f)}
+            key={filter}
+            style={[styles.filterChip, activeFilter === filter && styles.filterChipActive]}
+            onPress={() => setActiveFilter(filter)}
           >
-            <Text
-              style={[
-                styles.filterText,
-                activeFilter === f && styles.filterTextActive,
-              ]}
-            >
-              {f}
+            <Text style={[styles.filterText, activeFilter === filter && styles.filterTextActive]}>
+              {filter}
             </Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      {filtered.length === 0 ? (
-        <EmptyState icon="👥" title="No users found" />
+      {loading && list.length === 0 ? (
+        <LoadingSpinner message="Loading users..." />
+      ) : filtered.length === 0 ? (
+        <EmptyState title="No users found" />
       ) : (
         <FlashList
           data={filtered}
           renderItem={renderItem}
           estimatedItemSize={150}
-          keyExtractor={(item) => String(item.id)}
+          keyExtractor={(item) => String(item?._id)}
           contentContainerStyle={{ padding: SPACING.lg }}
           ItemSeparatorComponent={() => <View style={{ height: SPACING.md }} />}
         />
       )}
 
-      {/* FAB */}
-      <TouchableOpacity style={styles.fab} activeOpacity={0.8}>
-        <Text style={styles.fabIcon}>+</Text>
-      </TouchableOpacity>
-
       <ConfirmDialog
         visible={!!deleteTarget}
-        title="Disable User"
-        message={`Are you sure you want to disable the account for "${deleteTarget?.name}"? They will lose access to the app.`}
-        confirmLabel="Disable Account"
+        title="Delete User"
+        message={`Are you sure you want to delete "${deleteTarget?.name}"?`}
+        confirmLabel="Delete User"
         destructive
         onCancel={() => setDeleteTarget(null)}
-        onConfirm={() => setDeleteTarget(null)}
+        onConfirm={() => {
+          if (deleteTarget?._id) {
+            dispatch(removeUser(deleteTarget._id));
+          }
+          setDeleteTarget(null);
+        }}
       />
     </View>
   );
@@ -287,22 +235,4 @@ const styles = StyleSheet.create({
   },
   deleteText: { fontSize: 13, fontWeight: FONT.semibold, color: COLORS.danger },
   deleteTextDisabled: { color: COLORS.textMuted },
-  fab: {
-    position: "absolute",
-    bottom: 24,
-    right: 24,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: COLORS.primary,
-    justifyContent: "center",
-    alignItems: "center",
-    ...SHADOW.lg,
-  },
-  fabIcon: {
-    fontSize: 28,
-    color: COLORS.textInverse,
-    fontWeight: FONT.light,
-    marginTop: -2,
-  },
 });

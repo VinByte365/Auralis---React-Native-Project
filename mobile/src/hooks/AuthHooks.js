@@ -30,8 +30,6 @@ const navigation = useNavigation();
     setRegisterForm({ ...registerForm, [field]: value });
   };
 
-
-
   const loginRules = {
     email: {
       required: true,
