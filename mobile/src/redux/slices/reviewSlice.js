@@ -15,6 +15,7 @@ const initialState = {
   },
   isLoading: false,
   error: "",
+  isAllowedToReview:false
 };
 
 const reviewSlice = createSlice({

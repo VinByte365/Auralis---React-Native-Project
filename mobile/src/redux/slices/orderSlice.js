@@ -6,7 +6,11 @@ const initialState = {
   orders: [],
   isLoading: false,
   error: "",
+  productIds: [],
 };
+
+const getIds = (orders) =>
+  orders.map((order) => order.items.map((item) => item.product._id)).flat();
 
 const orderSlice = createSlice({
   name: "order",
@@ -20,6 +24,7 @@ const orderSlice = createSlice({
       .addCase(getOrders.fulfilled, (state, action) => {
         state.isLoading = false;
         state.orders = action.payload || [];
+        state.productIds = getIds(action.payload);
         state.error = "";
       })
       .addCase(getOrders.rejected, (state, action) => {

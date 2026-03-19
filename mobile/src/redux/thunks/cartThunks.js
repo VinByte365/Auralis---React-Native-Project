@@ -74,6 +74,9 @@ export const checkoutCart = createAsyncThunk(
       const result = await checkoutOrder({
         items,
         discounts: payload.discounts || {},
+        paymentMethod: payload.paymentMethod || "cod",
+        deliveryAddress: payload.deliveryAddress || "",
+        paymentDetails: payload.paymentDetails || {},
       });
 
       await dispatch(clearCart()).unwrap();

@@ -12,7 +12,6 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useDispatch, useSelector } from "react-redux";
 import {
   addToCart,
-  checkoutCart,
   clearCart,
   removeFromCart,
 } from "../../redux/thunks/cartThunks";
@@ -75,16 +74,7 @@ export default function CartScreen({ navigation }) {
   const handleCheckout = async () => {
     if (!items.length) return;
 
-    try {
-      await dispatch(checkoutCart()).unwrap();
-      Alert.alert("Order placed", "Checkout completed successfully.");
-      navigation.goBack();
-    } catch (checkoutError) {
-      Alert.alert(
-        "Checkout failed",
-        checkoutError?.error || checkoutError?.message || "Please try again.",
-      );
-    }
+    navigation.navigate("Checkout");
   };
 
   const handleClearCart = async () => {
