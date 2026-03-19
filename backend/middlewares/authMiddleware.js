@@ -21,7 +21,7 @@ exports.verifyToken = async (req, res, next) => {
 
 /**
  * Role-Based Access Control Middleware
- * Usage: roleAccess('admin') or roleAccess(['admin', 'manager'])
+ * Usage: roleAccess('admin') or roleAccess(['admin', 'user'])
  * @param {string|string[]} allowedRoles - Single role or array of roles
  * @returns {function} Middleware function
  */
