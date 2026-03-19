@@ -2,6 +2,7 @@ import React from "react";
 import {
   Alert,
   Image,
+  Modal,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -13,16 +14,14 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import useProduct from "../../hooks/user/useProduct";
 import ProductActionBar from "../../components/ProductActionBar";
-import { useDispatch } from "react-redux";
-import { addToCart } from "../../redux/thunks/cartThunks";
-
+import ProductReviewSection from "../../components/ProductReviewSection";
+import ProductReviewEditor from "../../components/ProductReviewEditor";
 const productImagePlaceholder = require("../../../assets/home/3.png");
 
 export default function ProductScreen({ route, navigation }) {
   const productId = route?.params?.productId;
-  const dispatch = useDispatch();
-  const [isLiked, setIsLiked] = React.useState(false);
   const {
+    userId,
     productDetails,
     isLoading,
     reviews,
@@ -31,42 +30,26 @@ export default function ProductScreen({ route, navigation }) {
     reviewError,
     suggestedProducts,
     displayPrice,
-  } = useProduct(productId);
+    canReview,
+    myReview,
+    isLiked,
+    showReviewEditor,
+    reviewEditorMode,
+    isSubmittingReview,
+    setShowReviewEditor,
+    setIsLiked,
+    handleAddToCart,
+    handleOrderNow,
+    handleReviewSubmit,
+    handleDeleteReview,
+    openAddReviewEditor,
+    openEditReviewEditor,
+  } = useProduct(productId, navigation);
 
-  const handleAddToCart = async () => {
-    if (!productDetails?._id) return;
-
-    try {
-      await dispatch(
-        addToCart({ product: productDetails, quantity: 1 }),
-      ).unwrap();
-      Alert.alert(
-        "Added to cart",
-        `${productDetails.name} was added to your cart.`,
-      );
-    } catch (error) {
-      Alert.alert(
-        "Unable to add",
-        error?.error || error?.message || "Please try again.",
-      );
-    }
-  };
-
-  const handleOrderNow = async () => {
-    if (!productDetails?._id) return;
-
-    try {
-      await dispatch(
-        addToCart({ product: productDetails, quantity: 1 }),
-      ).unwrap();
-      navigation.navigate("Cart");
-    } catch (error) {
-      Alert.alert(
-        "Unable to order",
-        error?.error || error?.message || "Please try again.",
-      );
-    }
-  };
+  const reviewSectionSummary = summary;
+  const reviewSectionData = Array.isArray(reviews) ? reviews : [];
+  const reviewSectionLoading = reviewLoading;
+  const reviewSectionError = reviewError;
 
   if (!productId) {
     return (
@@ -153,41 +136,42 @@ export default function ProductScreen({ route, navigation }) {
                 "No description available."}
             </Text>
 
-            <View style={styles.reviewHeaderRow}>
-              <Text style={styles.sectionTitle}>Reviews</Text>
-              <Text style={styles.reviewSummary}>
-                {summary?.averageRating || "0.0"} ★ (
-                {summary?.totalReviews || 0})
-              </Text>
-            </View>
-
-            {reviewLoading ? (
-              <Text style={styles.helperText}>Loading reviews...</Text>
-            ) : null}
-
-            {!reviewLoading && reviewError ? (
-              <Text style={styles.errorText}>{reviewError}</Text>
-            ) : null}
-
-            {!reviewLoading && !reviewError && reviews.length === 0 ? (
-              <Text style={styles.helperText}>No reviews yet.</Text>
-            ) : null}
-
-            {!reviewLoading && !reviewError && reviews.length > 0
-              ? reviews.slice(0, 5).map((review) => (
-                  <View style={styles.reviewCard} key={review._id}>
-                    <View style={styles.reviewTopRow}>
-                      <Text style={styles.reviewUser}>
-                        {review.user?.name || "User"}
-                      </Text>
-                      <Text style={styles.reviewRating}>{review.rating} ★</Text>
-                    </View>
-                    <Text style={styles.reviewComment}>
-                      {review.comment?.trim() || "No comment"}
-                    </Text>
-                  </View>
-                ))
-              : null}
+            <ProductReviewSection
+              title="Reviews"
+              summary={reviewSectionSummary}
+              reviews={reviewSectionData}
+              isLoading={reviewSectionLoading}
+              error={reviewSectionError}
+              maxItems={5}
+              showWriteReview={canReview}
+              currentUserId={userId}
+              onPressWriteReview={openAddReviewEditor}
+              onPressEditReview={openEditReviewEditor}
+              onPressDeleteReview={(review) => {
+                Alert.alert(
+                  "Delete review",
+                  "Are you sure you want to delete your review?",
+                  [
+                    { text: "Cancel", style: "cancel" },
+                    {
+                      text: "Delete",
+                      style: "destructive",
+                      onPress: () => {
+                        if (String(review?._id) === String(myReview?._id)) {
+                          handleDeleteReview();
+                        }
+                      },
+                    },
+                  ],
+                );
+              }}
+              onPressViewAll={() =>
+                Alert.alert(
+                  "View all reviews",
+                  "Connect your full reviews screen here.",
+                )
+              }
+            />
 
             <Text style={[styles.sectionTitle, styles.suggestionsTitle]}>
               You may also like
@@ -248,6 +232,52 @@ export default function ProductScreen({ route, navigation }) {
           onOrderNow={handleOrderNow}
         />
       ) : null}
+
+      <Modal
+        visible={showReviewEditor}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowReviewEditor(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <TouchableOpacity
+            style={styles.modalCloseArea}
+            onPress={() => setShowReviewEditor(false)}
+            activeOpacity={1}
+          />
+
+          <View style={styles.modalSheet}>
+            <View style={styles.modalHandle} />
+            <ProductReviewEditor
+              mode={reviewEditorMode}
+              initialRating={
+                reviewEditorMode === "update" ? myReview?.rating || 0 : 0
+              }
+              initialComment={
+                reviewEditorMode === "update" ? myReview?.comment || "" : ""
+              }
+              isSubmitting={isSubmittingReview}
+              showDelete={reviewEditorMode === "update"}
+              onCancel={() => setShowReviewEditor(false)}
+              onDelete={() => {
+                Alert.alert(
+                  "Delete review",
+                  "Are you sure you want to delete your review?",
+                  [
+                    { text: "Cancel", style: "cancel" },
+                    {
+                      text: "Delete",
+                      style: "destructive",
+                      onPress: handleDeleteReview,
+                    },
+                  ],
+                );
+              }}
+              onSubmit={handleReviewSubmit}
+            />
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -455,5 +485,29 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     paddingHorizontal: 2,
     marginBottom: 4,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.35)",
+    justifyContent: "flex-end",
+  },
+  modalCloseArea: {
+    flex: 1,
+  },
+  modalSheet: {
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: 22,
+  },
+  modalHandle: {
+    alignSelf: "center",
+    width: 42,
+    height: 4,
+    borderRadius: 999,
+    backgroundColor: "#d7d7d7",
+    marginBottom: 10,
   },
 });
