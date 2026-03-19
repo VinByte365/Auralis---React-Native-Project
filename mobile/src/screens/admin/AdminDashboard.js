@@ -1,92 +1,117 @@
-import React from 'react';
-import { View, ScrollView, StyleSheet, FlatList, Text, TouchableOpacity } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { COLORS, SPACING, RADIUS, FONT, SHADOW } from '../../constants/adminTheme';
-import AppHeader from './components/AppHeader';
-import KpiCard from './components/KpiCard';
-import ChartCard from './components/ChartCard';
-import SectionHeader from './components/SectionHeader';
-import StatusChip from './components/StatusChip';
+import React, { useEffect, useMemo } from "react";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import { useDispatch, useSelector } from "react-redux";
+import { COLORS, FONT, RADIUS, SHADOW, SPACING } from "../../constants/adminTheme";
+import { getAdminDashboardData } from "../../redux/thunks/adminThunks";
+import AppHeader from "./components/AppHeader";
+import ChartCard from "./components/ChartCard";
+import EmptyState from "./components/EmptyState";
+import KpiCard from "./components/KpiCard";
+import LoadingSpinner from "./components/LoadingSpinner";
+import SectionHeader from "./components/SectionHeader";
+import StatusChip from "./components/StatusChip";
 
-const MOCK_KPI = [
-  { icon: '💰', label: 'Total Revenue', value: '₱128,430', trend: 12.5, color: COLORS.success },
-  { icon: '📦', label: 'Total Orders', value: '1,284', trend: 8.2, color: COLORS.info },
-  { icon: '👥', label: 'Customers', value: '3,421', trend: 5.1, color: COLORS.primary },
-  { icon: '🛒', label: 'Products', value: '456', trend: -2.3, color: COLORS.warning },
-];
-
-const MOCK_ORDERS = [
-  { id: 'ORD-0012', customer: 'Juan Dela Cruz', total: '₱2,450', status: 'Pending' },
-  { id: 'ORD-0011', customer: 'Maria Santos', total: '₱1,890', status: 'Completed' },
-  { id: 'ORD-0010', customer: 'Pedro Reyes', total: '₱3,120', status: 'Shipped' },
-  { id: 'ORD-0009', customer: 'Ana Garcia', total: '₱980', status: 'Processing' },
-  { id: 'ORD-0008', customer: 'Luis Ramos', total: '₱4,560', status: 'Delivered' },
-];
-
-const MOCK_ACTIVITY = [
-  { action: 'New order placed', detail: 'ORD-0012 by Juan Dela Cruz', time: '2 min ago' },
-  { action: 'Product updated', detail: 'SKU-1234 stock adjusted', time: '15 min ago' },
-  { action: 'User registered', detail: 'maria.santos@email.com', time: '1 hr ago' },
-  { action: 'Category added', detail: 'Electronics > Smart Home', time: '3 hr ago' },
-];
+function formatCurrency(value) {
+  const amount = Number(value || 0);
+  return `PHP ${amount.toLocaleString()}`;
+}
 
 export default function AdminDashboard() {
   const navigation = useNavigation();
+  const dispatch = useDispatch();
+  const { summary, recentOrders, activity, loading } = useSelector(
+    (state) => state.admin.dashboard,
+  );
+
+  useEffect(() => {
+    dispatch(getAdminDashboardData());
+  }, [dispatch]);
+
+  const kpis = useMemo(() => {
+    const totalRevenue = summary?.totalRevenue || summary?.revenue || 0;
+    const totalOrders =
+      summary?.totalOrders || summary?.orderCount || recentOrders.length || 0;
+    const totalCustomers = summary?.totalCustomers || summary?.userCount || 0;
+    const totalProducts = summary?.totalProducts || summary?.productCount || 0;
+
+    return [
+      { icon: "REV", label: "Total Revenue", value: formatCurrency(totalRevenue), trend: 0, color: COLORS.success },
+      { icon: "ORD", label: "Total Orders", value: String(totalOrders), trend: 0, color: COLORS.info },
+      { icon: "CUS", label: "Customers", value: String(totalCustomers), trend: 0, color: COLORS.primary },
+      { icon: "PRD", label: "Products", value: String(totalProducts), trend: 0, color: COLORS.warning },
+    ];
+  }, [recentOrders.length, summary]);
 
   return (
     <View style={styles.root}>
       <AppHeader title="Dashboard" subtitle="Welcome back, Admin" navigation={navigation} />
-      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
-        {/* KPI Grid */}
-        <View style={styles.kpiGrid}>
-          {MOCK_KPI.map((kpi, i) => (
-            <View key={i} style={styles.kpiItem}>
-              <KpiCard {...kpi} />
+      {loading && !summary && recentOrders.length === 0 ? (
+        <LoadingSpinner message="Loading dashboard..." />
+      ) : (
+        <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
+          <View style={styles.kpiGrid}>
+            {kpis.map((kpi) => (
+              <View key={kpi.label} style={styles.kpiItem}>
+                <KpiCard {...kpi} />
+              </View>
+            ))}
+          </View>
+
+          <ChartCard title="Sales Overview" subtitle="Recent performance" height={180} />
+          <ChartCard title="Top Products" subtitle="By revenue" height={160} />
+
+          <SectionHeader title="Recent Orders" actionLabel="View All" onAction={() => navigation.navigate("OrderList")} />
+          {recentOrders.length === 0 ? (
+            <EmptyState title="No recent orders" description="Orders will appear here once available." />
+          ) : (
+            <View style={styles.ordersCard}>
+              {recentOrders.map((order) => (
+                <TouchableOpacity
+                  key={order?._id}
+                  style={styles.orderRow}
+                  activeOpacity={0.7}
+                  onPress={() => navigation.navigate("OrderDetails", { orderId: order?._id })}
+                >
+                  <View style={styles.orderInfo}>
+                    <Text style={styles.orderId}>{order?._id?.slice(-8) || "Order"}</Text>
+                    <Text style={styles.orderCustomer}>{order?.user?.name || "Guest"}</Text>
+                  </View>
+                  <View style={styles.orderRight}>
+                    <Text style={styles.orderTotal}>{formatCurrency(order?.finalAmountPaid)}</Text>
+                    <StatusChip status={order?.status || "PENDING"} />
+                  </View>
+                </TouchableOpacity>
+              ))}
             </View>
-          ))}
-        </View>
+          )}
 
-        {/* Sales Chart */}
-        <ChartCard title="Sales Overview" subtitle="Last 7 days performance" height={180} />
-
-        {/* Product Chart */}
-        <ChartCard title="Top Products" subtitle="By revenue this month" height={160} />
-
-        {/* Recent Orders */}
-        <SectionHeader title="Recent Orders" actionLabel="View All" onAction={() => navigation.navigate('OrderList')} />
-        <View style={styles.ordersCard}>
-          {MOCK_ORDERS.map((order) => (
-            <TouchableOpacity key={order.id} style={styles.orderRow} activeOpacity={0.7}
-              onPress={() => navigation.navigate('OrderDetails')}>
-              <View style={styles.orderInfo}>
-                <Text style={styles.orderId}>{order.id}</Text>
-                <Text style={styles.orderCustomer}>{order.customer}</Text>
-              </View>
-              <View style={styles.orderRight}>
-                <Text style={styles.orderTotal}>{order.total}</Text>
-                <StatusChip status={order.status} />
-              </View>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* Activity Log */}
-        <SectionHeader title="Activity Log" actionLabel="See All" />
-        <View style={styles.activityCard}>
-          {MOCK_ACTIVITY.map((item, i) => (
-            <View key={i} style={[styles.activityRow, i === MOCK_ACTIVITY.length - 1 && { borderBottomWidth: 0 }]}>
-              <View style={styles.activityDot} />
-              <View style={styles.activityInfo}>
-                <Text style={styles.activityAction}>{item.action}</Text>
-                <Text style={styles.activityDetail}>{item.detail}</Text>
-              </View>
-              <Text style={styles.activityTime}>{item.time}</Text>
+          <SectionHeader title="Activity Log" />
+          {activity.length === 0 ? (
+            <EmptyState title="No activity yet" description="System activity will be listed here." />
+          ) : (
+            <View style={styles.activityCard}>
+              {activity.slice(0, 6).map((item, index) => (
+                <View
+                  key={item?._id || index}
+                  style={[styles.activityRow, index === activity.length - 1 && { borderBottomWidth: 0 }]}
+                >
+                  <View style={styles.activityDot} />
+                  <View style={styles.activityInfo}>
+                    <Text style={styles.activityAction}>{item?.action || "Activity"}</Text>
+                    <Text style={styles.activityDetail}>{item?.description || "No details"}</Text>
+                  </View>
+                  <Text style={styles.activityTime}>
+                    {item?.createdAt ? new Date(item.createdAt).toLocaleDateString() : "N/A"}
+                  </Text>
+                </View>
+              ))}
             </View>
-          ))}
-        </View>
+          )}
 
-        <View style={{ height: 40 }} />
-      </ScrollView>
+          <View style={{ height: 40 }} />
+        </ScrollView>
+      )}
     </View>
   );
 }
@@ -100,13 +125,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   kpiGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     padding: SPACING.lg,
     gap: SPACING.md,
   },
   kpiItem: {
-    width: '47%',
+    width: "47%",
   },
   ordersCard: {
     backgroundColor: COLORS.surface,
@@ -114,13 +139,13 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.lg,
     borderWidth: 1,
     borderColor: COLORS.surfaceBorder,
-    overflow: 'hidden',
+    overflow: "hidden",
     ...SHADOW.sm,
   },
   orderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.md,
     borderBottomWidth: 1,
@@ -140,7 +165,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   orderRight: {
-    alignItems: 'flex-end',
+    alignItems: "flex-end",
     gap: SPACING.xs,
   },
   orderTotal: {
@@ -158,8 +183,8 @@ const styles = StyleSheet.create({
     ...SHADOW.sm,
   },
   activityRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    alignItems: "flex-start",
     paddingVertical: SPACING.sm,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.divider,

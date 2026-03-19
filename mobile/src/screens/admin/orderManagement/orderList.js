@@ -1,107 +1,150 @@
-import React, { useState, useRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { FlashList } from '@shopify/flash-list';
-import { useNavigation } from '@react-navigation/native';
-import { COLORS, SPACING, RADIUS, FONT, SHADOW } from '../../../constants/adminTheme';
-import AppHeader from '../components/AppHeader';
-import SearchBar from '../components/SearchBar';
-import StatusChip from '../components/StatusChip';
-import PaginationFooter from '../components/PaginationFooter';
-import EmptyState from '../components/EmptyState';
+import React, { useEffect, useMemo, useState } from "react";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { FlashList } from "@shopify/flash-list";
+import { useNavigation } from "@react-navigation/native";
+import { useDispatch, useSelector } from "react-redux";
+import { COLORS, FONT, RADIUS, SHADOW, SPACING } from "../../../constants/adminTheme";
+import { getAdminOrders } from "../../../redux/thunks/adminThunks";
+import AppHeader from "../components/AppHeader";
+import EmptyState from "../components/EmptyState";
+import LoadingSpinner from "../components/LoadingSpinner";
+import PaginationFooter from "../components/PaginationFooter";
+import SearchBar from "../components/SearchBar";
+import StatusChip from "../components/StatusChip";
 
-const MOCK_ORDERS = [
-  { id: 'ORD-0024', customer: 'Juan Dela Cruz', email: 'juan@email.com', total: '₱4,580', status: 'Pending', date: 'Mar 15, 2026', items: 3 },
-  { id: 'ORD-0023', customer: 'Maria Santos', email: 'maria@email.com', total: '₱2,190', status: 'Processing', date: 'Mar 15, 2026', items: 2 },
-  { id: 'ORD-0022', customer: 'Pedro Reyes', email: 'pedro@email.com', total: '₱6,340', status: 'Shipped', date: 'Mar 14, 2026', items: 5 },
-  { id: 'ORD-0021', customer: 'Ana Garcia', email: 'ana@email.com', total: '₱1,290', status: 'Delivered', date: 'Mar 14, 2026', items: 1 },
-  { id: 'ORD-0020', customer: 'Luis Ramos', email: 'luis@email.com', total: '₱3,780', status: 'Completed', date: 'Mar 13, 2026', items: 4 },
-  { id: 'ORD-0019', customer: 'Rosa Villanueva', email: 'rosa@email.com', total: '₱890', status: 'Cancelled', date: 'Mar 13, 2026', items: 1 },
-  { id: 'ORD-0018', customer: 'Carlos Mendoza', email: 'carlos@email.com', total: '₱5,120', status: 'Pending', date: 'Mar 12, 2026', items: 3 },
-  { id: 'ORD-0017', customer: 'Elena Torres', email: 'elena@email.com', total: '₱2,670', status: 'Completed', date: 'Mar 12, 2026', items: 2 },
+const FILTER_OPTIONS = [
+  "ALL",
+  "PENDING",
+  "CONFIRMED",
+  "PROCESSING",
+  "COMPLETED",
+  "CANCELLED",
+  "REFUNDED",
 ];
 
-const FILTER_OPTIONS = ['All', 'Pending', 'Processing', 'Shipped', 'Delivered', 'Completed', 'Cancelled'];
+function formatCurrency(value) {
+  const amount = Number(value || 0);
+  return `PHP ${amount.toLocaleString()}`;
+}
+
+function formatDate(value) {
+  if (!value) return "N/A";
+  try {
+    return new Date(value).toLocaleDateString();
+  } catch {
+    return String(value);
+  }
+}
 
 export default function OrderList() {
   const navigation = useNavigation();
-  const [search, setSearch] = useState('');
-  const [activeFilter, setActiveFilter] = useState('All');
+  const dispatch = useDispatch();
+  const [search, setSearch] = useState("");
+  const [activeFilter, setActiveFilter] = useState("ALL");
   const [page, setPage] = useState(1);
 
-  const filtered = MOCK_ORDERS.filter((o) => {
-    const matchSearch = o.customer.toLowerCase().includes(search.toLowerCase()) ||
-      o.id.toLowerCase().includes(search.toLowerCase());
-    const matchFilter = activeFilter === 'All' || o.status === activeFilter;
-    return matchSearch && matchFilter;
-  });
+  const { list, loading, pagination } = useSelector((state) => state.admin.orders);
 
-  const renderOrder = ({ item }) => (
-    <TouchableOpacity
-      style={styles.orderCard}
-      onPress={() => navigation.navigate('OrderDetails')}
-      activeOpacity={0.7}
-    >
-      <View style={styles.orderHeader}>
-        <Text style={styles.orderId}>{item.id}</Text>
-        <StatusChip status={item.status} />
-      </View>
-      <View style={styles.orderBody}>
-        <View style={styles.customerInfo}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{item.customer[0]}</Text>
+  useEffect(() => {
+    dispatch(
+      getAdminOrders({
+        page,
+        limit: 20,
+        status: activeFilter === "ALL" ? undefined : activeFilter,
+        search: search.trim() || undefined,
+      }),
+    );
+  }, [activeFilter, dispatch, page, search]);
+
+  const totalPages = useMemo(() => {
+    const total = Number(pagination?.total || 0);
+    const limit = Number(pagination?.limit || 20);
+    return Math.max(1, Math.ceil(total / limit));
+  }, [pagination?.limit, pagination?.total]);
+
+  const renderOrder = ({ item }) => {
+    const customerName = item?.user?.name || "Guest";
+    const customerEmail = item?.user?.email || "No email";
+    const itemCount = Array.isArray(item?.items) ? item.items.length : 0;
+    return (
+      <TouchableOpacity
+        style={styles.orderCard}
+        onPress={() => navigation.navigate("OrderDetails", { orderId: item?._id })}
+        activeOpacity={0.7}
+      >
+        <View style={styles.orderHeader}>
+          <Text style={styles.orderId}>{item?._id?.slice(-8) || "Order"}</Text>
+          <StatusChip status={item?.status || "PENDING"} />
+        </View>
+        <View style={styles.orderBody}>
+          <View style={styles.customerInfo}>
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>{customerName[0] || "U"}</Text>
+            </View>
+            <View>
+              <Text style={styles.customerName}>{customerName}</Text>
+              <Text style={styles.customerEmail}>{customerEmail}</Text>
+            </View>
           </View>
-          <View>
-            <Text style={styles.customerName}>{item.customer}</Text>
-            <Text style={styles.customerEmail}>{item.email}</Text>
+          <View style={styles.orderMeta}>
+            <View style={styles.metaRow}>
+              <Text style={styles.metaLabel}>Items</Text>
+              <Text style={styles.metaValue}>{itemCount}</Text>
+            </View>
+            <View style={styles.metaRow}>
+              <Text style={styles.metaLabel}>Total</Text>
+              <Text style={styles.metaValueBold}>{formatCurrency(item?.finalAmountPaid)}</Text>
+            </View>
           </View>
         </View>
-        <View style={styles.orderMeta}>
-          <View style={styles.metaRow}>
-            <Text style={styles.metaLabel}>Items</Text>
-            <Text style={styles.metaValue}>{item.items}</Text>
-          </View>
-          <View style={styles.metaRow}>
-            <Text style={styles.metaLabel}>Total</Text>
-            <Text style={styles.metaValueBold}>{item.total}</Text>
-          </View>
-        </View>
-      </View>
-      <Text style={styles.orderDate}>{item.date}</Text>
-    </TouchableOpacity>
-  );
+        <Text style={styles.orderDate}>{formatDate(item?.createdAt)}</Text>
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <View style={styles.root}>
-      <AppHeader title="Orders" subtitle={`${MOCK_ORDERS.length} total orders`} navigation={navigation} />
-      <SearchBar placeholder="Search by order ID or customer..." value={search} onChangeText={setSearch} />
+      <AppHeader title="Orders" subtitle={`${pagination?.total || list.length} total orders`} navigation={navigation} />
+      <SearchBar placeholder="Search by payment or delivery..." value={search} onChangeText={setSearch} />
 
-      {/* Filter Chips */}
       <View style={styles.filterRow}>
-        {FILTER_OPTIONS.map((f) => (
+        {FILTER_OPTIONS.map((filter) => (
           <TouchableOpacity
-            key={f}
-            style={[styles.filterChip, activeFilter === f && styles.filterChipActive]}
-            onPress={() => setActiveFilter(f)}
+            key={filter}
+            style={[styles.filterChip, activeFilter === filter && styles.filterChipActive]}
+            onPress={() => {
+              setPage(1);
+              setActiveFilter(filter);
+            }}
           >
-            <Text style={[styles.filterText, activeFilter === f && styles.filterTextActive]}>{f}</Text>
+            <Text style={[styles.filterText, activeFilter === filter && styles.filterTextActive]}>
+              {filter === "ALL" ? "All" : filter}
+            </Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      {filtered.length === 0 ? (
-        <EmptyState icon="📦" title="No orders found" description="Try changing the filters or search." />
+      {loading && list.length === 0 ? (
+        <LoadingSpinner message="Loading orders..." />
+      ) : list.length === 0 ? (
+        <EmptyState title="No orders found" description="Try changing filters or search text." />
       ) : (
         <FlashList
-          data={filtered}
+          data={list}
           renderItem={renderOrder}
           estimatedItemSize={160}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => item?._id}
           contentContainerStyle={{ padding: SPACING.lg }}
           ItemSeparatorComponent={() => <View style={{ height: SPACING.md }} />}
         />
       )}
 
-      <PaginationFooter currentPage={page} totalPages={3} onPrev={() => setPage(Math.max(1, page - 1))} onNext={() => setPage(Math.min(3, page + 1))} />
+      <PaginationFooter
+        currentPage={page}
+        totalPages={totalPages}
+        onPrev={() => setPage((current) => Math.max(1, current - 1))}
+        onNext={() => setPage((current) => Math.min(totalPages, current + 1))}
+      />
     </View>
   );
 }
@@ -109,11 +152,11 @@ export default function OrderList() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.background },
   filterRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     paddingHorizontal: SPACING.lg,
     paddingBottom: SPACING.sm,
     gap: SPACING.xs,
-    flexWrap: 'wrap',
+    flexWrap: "wrap",
   },
   filterChip: {
     paddingHorizontal: SPACING.md,
@@ -135,32 +178,32 @@ const styles = StyleSheet.create({
     ...SHADOW.sm,
   },
   orderHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: SPACING.md,
   },
   orderId: { fontSize: 15, fontWeight: FONT.bold, color: COLORS.textPrimary },
   orderBody: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
-  customerInfo: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+  customerInfo: { flexDirection: "row", alignItems: "center", flex: 1 },
   avatar: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: COLORS.primaryLight + '40',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: COLORS.primaryLight + "40",
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: SPACING.sm,
   },
   avatarText: { fontSize: 14, fontWeight: FONT.bold, color: COLORS.primary },
   customerName: { fontSize: 14, fontWeight: FONT.semibold, color: COLORS.textPrimary },
   customerEmail: { fontSize: 11, color: COLORS.textMuted, marginTop: 1 },
-  orderMeta: { alignItems: 'flex-end' },
-  metaRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.xs },
+  orderMeta: { alignItems: "flex-end" },
+  metaRow: { flexDirection: "row", alignItems: "center", gap: SPACING.xs },
   metaLabel: { fontSize: 11, color: COLORS.textMuted },
   metaValue: { fontSize: 13, color: COLORS.textSecondary, fontWeight: FONT.medium },
   metaValueBold: { fontSize: 15, color: COLORS.textPrimary, fontWeight: FONT.bold },

@@ -1,85 +1,116 @@
-import React, { useState, useRef } from 'react';
-import { View, ScrollView, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { COLORS, SPACING, RADIUS, FONT, SHADOW } from '../../../constants/adminTheme';
-import AppHeader from '../components/AppHeader';
-import SearchBar from '../components/SearchBar';
-import ChartCard from '../components/ChartCard';
-import SectionHeader from '../components/SectionHeader';
-import StatusChip from '../components/StatusChip';
+import React, { useEffect, useMemo, useState } from "react";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import { useDispatch, useSelector } from "react-redux";
+import { COLORS, FONT, RADIUS, SHADOW, SPACING } from "../../../constants/adminTheme";
+import { getAdminProductAnalyticsData } from "../../../redux/thunks/adminThunks";
+import AppHeader from "../components/AppHeader";
+import ChartCard from "../components/ChartCard";
+import EmptyState from "../components/EmptyState";
+import LoadingSpinner from "../components/LoadingSpinner";
+import SearchBar from "../components/SearchBar";
+import SectionHeader from "../components/SectionHeader";
+import StatusChip from "../components/StatusChip";
 
-const MOCK_PRODUCTS = [
-  { id: 1, name: 'Wireless Earbuds Pro', sku: 'SKU-1001', sales: 342, revenue: '₱85,500', stock: 45, status: 'OK' },
-  { id: 2, name: 'Smart Watch X200', sku: 'SKU-1002', sales: 289, revenue: '₱144,500', stock: 12, status: 'Low' },
-  { id: 3, name: 'USB-C Hub 7-in-1', sku: 'SKU-1003', sales: 256, revenue: '₱38,400', stock: 88, status: 'OK' },
-  { id: 4, name: 'Bluetooth Speaker Mini', sku: 'SKU-1004', sales: 198, revenue: '₱29,700', stock: 5, status: 'Low' },
-  { id: 5, name: 'Phone Case Premium', sku: 'SKU-1005', sales: 167, revenue: '₱8,350', stock: 230, status: 'OK' },
-  { id: 6, name: 'LED Desk Lamp', sku: 'SKU-1006', sales: 145, revenue: '₱21,750', stock: 67, status: 'OK' },
-];
+function formatCurrency(value) {
+  const amount = Number(value || 0);
+  return `PHP ${amount.toLocaleString()}`;
+}
 
 export default function AnalyticsProduct() {
   const navigation = useNavigation();
-  const [search, setSearch] = useState('');
+  const dispatch = useDispatch();
+  const [search, setSearch] = useState("");
 
-  const filtered = MOCK_PRODUCTS.filter((p) =>
-    p.name.toLowerCase().includes(search.toLowerCase())
-  );
+  const products = useSelector((state) => state.admin.products.list);
+  const { loading } = useSelector((state) => state.admin.analytics);
+
+  useEffect(() => {
+    dispatch(getAdminProductAnalyticsData({ search }));
+  }, [dispatch, search]);
+
+  const filtered = useMemo(() => {
+    const query = search.toLowerCase();
+    return products.filter((product) =>
+      String(product?.name || "").toLowerCase().includes(query),
+    );
+  }, [products, search]);
+
+  const stats = useMemo(() => {
+    const total = filtered.length;
+    const low = filtered.filter((item) => Number(item?.stockQuantity || 0) <= 10).length;
+    const out = filtered.filter((item) => Number(item?.stockQuantity || 0) === 0).length;
+    return { total, low, out, inStock: total - out };
+  }, [filtered]);
 
   return (
     <View style={styles.root}>
-      <AppHeader title="Product Analytics" subtitle="Performance & inventory insights" navigation={navigation} />
+      <AppHeader title="Product Analytics" subtitle="Performance and inventory insights" navigation={navigation} />
       <SearchBar placeholder="Search products..." value={search} onChangeText={setSearch} />
 
-      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
-        {/* Top Products Chart */}
-        <ChartCard title="Top Products by Revenue" subtitle="This month" height={180} />
+      {loading && products.length === 0 ? (
+        <LoadingSpinner message="Loading product analytics..." />
+      ) : (
+        <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
+          <ChartCard title="Top Products by Revenue" subtitle="Current catalog" height={180} />
 
-        {/* Inventory Status */}
-        <SectionHeader title="Inventory Status" />
-        <View style={styles.inventoryRow}>
-          <View style={styles.inventoryStat}>
-            <Text style={styles.inventoryValue}>456</Text>
-            <Text style={styles.inventoryLabel}>Total SKUs</Text>
-          </View>
-          <View style={styles.inventoryStat}>
-            <Text style={[styles.inventoryValue, { color: COLORS.success }]}>412</Text>
-            <Text style={styles.inventoryLabel}>In Stock</Text>
-          </View>
-          <View style={styles.inventoryStat}>
-            <Text style={[styles.inventoryValue, { color: COLORS.warning }]}>32</Text>
-            <Text style={styles.inventoryLabel}>Low Stock</Text>
-          </View>
-          <View style={styles.inventoryStat}>
-            <Text style={[styles.inventoryValue, { color: COLORS.danger }]}>12</Text>
-            <Text style={styles.inventoryLabel}>Out of Stock</Text>
-          </View>
-        </View>
-
-        {/* Product List */}
-        <SectionHeader title="Product Performance" />
-        <View style={styles.listCard}>
-          {filtered.map((product, i) => (
-            <View key={product.id} style={[styles.productRow, i === filtered.length - 1 && { borderBottomWidth: 0 }]}>
-              <View style={styles.productRank}>
-                <Text style={styles.rankText}>#{i + 1}</Text>
-              </View>
-              <View style={styles.productInfo}>
-                <Text style={styles.productName}>{product.name}</Text>
-                <Text style={styles.productSku}>{product.sku}</Text>
-              </View>
-              <View style={styles.productStats}>
-                <Text style={styles.productRevenue}>{product.revenue}</Text>
-                <View style={styles.salesRow}>
-                  <Text style={styles.productSales}>{product.sales} sold</Text>
-                  <StatusChip status={product.status} />
-                </View>
-              </View>
+          <SectionHeader title="Inventory Status" />
+          <View style={styles.inventoryRow}>
+            <View style={styles.inventoryStat}>
+              <Text style={styles.inventoryValue}>{stats.total}</Text>
+              <Text style={styles.inventoryLabel}>Total SKUs</Text>
             </View>
-          ))}
-        </View>
+            <View style={styles.inventoryStat}>
+              <Text style={[styles.inventoryValue, { color: COLORS.success }]}>{stats.inStock}</Text>
+              <Text style={styles.inventoryLabel}>In Stock</Text>
+            </View>
+            <View style={styles.inventoryStat}>
+              <Text style={[styles.inventoryValue, { color: COLORS.warning }]}>{stats.low}</Text>
+              <Text style={styles.inventoryLabel}>Low Stock</Text>
+            </View>
+            <View style={styles.inventoryStat}>
+              <Text style={[styles.inventoryValue, { color: COLORS.danger }]}>{stats.out}</Text>
+              <Text style={styles.inventoryLabel}>Out of Stock</Text>
+            </View>
+          </View>
 
-        <View style={{ height: 40 }} />
-      </ScrollView>
+          <SectionHeader title="Product Performance" />
+          {filtered.length === 0 ? (
+            <EmptyState title="No products found" description="Try another search keyword." />
+          ) : (
+            <View style={styles.listCard}>
+              {filtered.slice(0, 20).map((product, index) => {
+                const lowStatus = Number(product?.stockQuantity || 0) <= 10;
+                return (
+                  <View
+                    key={product?._id}
+                    style={[styles.productRow, index === filtered.length - 1 && { borderBottomWidth: 0 }]}
+                  >
+                    <View style={styles.productRank}>
+                      <Text style={styles.rankText}>#{index + 1}</Text>
+                    </View>
+                    <View style={styles.productInfo}>
+                      <Text style={styles.productName}>{product?.name || "Product"}</Text>
+                      <Text style={styles.productSku}>{product?.sku || "N/A"}</Text>
+                    </View>
+                    <View style={styles.productStats}>
+                      <Text style={styles.productRevenue}>{formatCurrency(product?.price)}</Text>
+                      <View style={styles.salesRow}>
+                        <Text style={styles.productSales}>
+                          {Number(product?.stockQuantity || 0)} in stock
+                        </Text>
+                        <StatusChip status={lowStatus ? "Low" : "OK"} />
+                      </View>
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          )}
+
+          <View style={{ height: 40 }} />
+        </ScrollView>
+      )}
     </View>
   );
 }
@@ -88,17 +119,19 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.background },
   scroll: { flex: 1 },
   inventoryRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     marginHorizontal: SPACING.lg,
     marginBottom: SPACING.md,
     gap: SPACING.sm,
+    flexWrap: "wrap",
   },
   inventoryStat: {
     flex: 1,
+    minWidth: "22%",
     backgroundColor: COLORS.surface,
     borderRadius: RADIUS.lg,
     padding: SPACING.md,
-    alignItems: 'center',
+    alignItems: "center",
     borderWidth: 1,
     borderColor: COLORS.surfaceBorder,
     ...SHADOW.sm,
@@ -120,12 +153,12 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.lg,
     borderWidth: 1,
     borderColor: COLORS.surfaceBorder,
-    overflow: 'hidden',
+    overflow: "hidden",
     ...SHADOW.sm,
   },
   productRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.md,
     borderBottomWidth: 1,
@@ -136,8 +169,8 @@ const styles = StyleSheet.create({
     height: 32,
     borderRadius: 16,
     backgroundColor: COLORS.background,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: SPACING.md,
   },
   rankText: {
@@ -157,7 +190,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   productStats: {
-    alignItems: 'flex-end',
+    alignItems: "flex-end",
   },
   productRevenue: {
     fontSize: 14,
@@ -165,8 +198,8 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
   },
   salesRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: SPACING.xs,
     marginTop: 2,
   },

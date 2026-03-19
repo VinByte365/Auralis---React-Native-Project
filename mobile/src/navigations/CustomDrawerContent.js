@@ -1,77 +1,102 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from "react";
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  StyleSheet,
-  Animated,
   LayoutAnimation,
   Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
   UIManager,
-} from 'react-native';
-import { DrawerContentScrollView } from '@react-navigation/drawer';
-import { COLORS, SPACING, RADIUS, FONT } from '../constants/adminTheme';
+  View,
+} from "react-native";
+import { DrawerContentScrollView } from "@react-navigation/drawer";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useDispatch } from "react-redux";
+import { logout } from "../redux/thunks/authThunk";
+import { COLORS, FONT, RADIUS, SPACING } from "../constants/adminTheme";
 
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+if (
+  Platform.OS === "android" &&
+  UIManager.setLayoutAnimationEnabledExperimental
+) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
 const MENU_GROUPS = [
   {
-    key: 'dashboard',
-    label: 'Dashboard',
-    icon: '📊',
-    screen: 'AdminDashboard',
+    key: "dashboard",
+    label: "Dashboard",
+    icon: "view-dashboard-outline",
+    screen: "AdminDashboard",
   },
   {
-    key: 'analytics',
-    label: 'Analytics',
-    icon: '📈',
+    key: "analytics",
+    label: "Analytics",
+    icon: "chart-line",
     children: [
-      { key: 'analyticsOverview', label: 'Overview', screen: 'AnalyticsOverview' },
-      { key: 'analyticsProduct', label: 'Products', screen: 'AnalyticsProduct' },
-      { key: 'analyticsUser', label: 'Users', screen: 'AnalyticsUser' },
-      { key: 'analyticsOperation', label: 'Operations', screen: 'AnalyticsOperation' },
+      { key: "analyticsOverview", label: "Overview", screen: "AnalyticsOverview" },
+      { key: "analyticsProduct", label: "Products", screen: "AnalyticsProduct" },
+      { key: "analyticsUser", label: "Users", screen: "AnalyticsUser" },
+      { key: "analyticsOperation", label: "Operations", screen: "AnalyticsOperation" },
     ],
   },
   {
-    key: 'categories',
-    label: 'Categories',
-    icon: '🗂️',
-    screen: 'CategoryList',
+    key: "categories",
+    label: "Categories",
+    icon: "shape-outline",
+    screen: "CategoryList",
   },
   {
-    key: 'orders',
-    label: 'Orders',
-    icon: '📦',
+    key: "orders",
+    label: "Orders",
+    icon: "package-variant-closed",
     children: [
-      { key: 'orderList', label: 'All Orders', screen: 'OrderList' },
-      { key: 'orderDetails', label: 'Order Details', screen: 'OrderDetails' },
+      { key: "orderList", label: "All Orders", screen: "OrderList" },
+      { key: "orderDetails", label: "Order Details", screen: "OrderDetails" },
     ],
   },
   {
-    key: 'products',
-    label: 'Products',
-    icon: '🛒',
+    key: "products",
+    label: "Products",
+    icon: "shopping-outline",
     children: [
-      { key: 'productList', label: 'All Products', screen: 'ProductList' },
-      { key: 'inventory', label: 'Inventory', screen: 'Inventory' },
-      { key: 'recycleBin', label: 'Recycle Bin', screen: 'RecycleBin' },
+      { key: "productList", label: "All Products", screen: "ProductList" },
+      { key: "inventory", label: "Inventory", screen: "Inventory" },
+      { key: "recycleBin", label: "Recycle Bin", screen: "RecycleBin" },
     ],
   },
   {
-    key: 'users',
-    label: 'Users',
-    icon: '👤',
-    screen: 'UserList',
+    key: "users",
+    label: "Users",
+    icon: "account-group-outline",
+    screen: "UserList",
   },
 ];
 
+function hasActiveChild(group, activeRouteName) {
+  if (!Array.isArray(group.children)) return false;
+  return group.children.some((child) => child.screen === activeRouteName);
+}
+
 export default function CustomDrawerContent(props) {
   const { state, navigation } = props;
-  const [expandedGroups, setExpandedGroups] = useState({ analytics: false, orders: false, products: false });
+  const dispatch = useDispatch();
   const activeRouteName = state.routes[state.index]?.name;
+
+  const [expandedGroups, setExpandedGroups] = useState({
+    analytics: true,
+    orders: true,
+    products: true,
+  });
+
+  const computedExpanded = useMemo(() => {
+    const next = { ...expandedGroups };
+    MENU_GROUPS.forEach((group) => {
+      if (hasActiveChild(group, activeRouteName)) {
+        next[group.key] = true;
+      }
+    });
+    return next;
+  }, [activeRouteName, expandedGroups]);
 
   const toggleGroup = (key) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -84,45 +109,52 @@ export default function CustomDrawerContent(props) {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <View style={styles.avatarWrap}>
-          <Text style={styles.avatarText}>A</Text>
+          <Text style={styles.avatarText}>AD</Text>
         </View>
         <View style={styles.headerInfo}>
           <Text style={styles.headerTitle}>Auralis</Text>
-          <Text style={styles.headerSubtitle}>Admin Panel</Text>
+          <Text style={styles.headerSubtitle}>Administration</Text>
         </View>
       </View>
 
       <View style={styles.divider} />
 
-      {/* Menu */}
-      <ScrollView style={styles.menuScroll} showsVerticalScrollIndicator={false}>
+      <DrawerContentScrollView
+        {...props}
+        contentContainerStyle={styles.menuScrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         {MENU_GROUPS.map((group) => {
-          const hasChildren = group.children && group.children.length > 0;
-          const isExpanded = expandedGroups[group.key];
-          const isActive = !hasChildren && activeRouteName === group.screen;
+          const hasChildren = Array.isArray(group.children) && group.children.length > 0;
+          const isExpanded = computedExpanded[group.key];
+          const isActive =
+            (!hasChildren && activeRouteName === group.screen) ||
+            hasActiveChild(group, activeRouteName);
 
           return (
             <View key={group.key}>
               <TouchableOpacity
                 style={[styles.menuItem, isActive && styles.menuItemActive]}
-                onPress={() => {
-                  if (hasChildren) {
-                    toggleGroup(group.key);
-                  } else {
-                    navigateTo(group.screen);
-                  }
-                }}
-                activeOpacity={0.7}
+                onPress={() => (hasChildren ? toggleGroup(group.key) : navigateTo(group.screen))}
+                activeOpacity={0.8}
               >
-                <Text style={styles.menuIcon}>{group.icon}</Text>
+                <MaterialCommunityIcons
+                  name={group.icon}
+                  size={18}
+                  color={isActive ? COLORS.sidebarIconActive : COLORS.sidebarIcon}
+                  style={styles.menuIcon}
+                />
                 <Text style={[styles.menuLabel, isActive && styles.menuLabelActive]}>
                   {group.label}
                 </Text>
                 {hasChildren && (
-                  <Text style={styles.chevron}>{isExpanded ? '▾' : '▸'}</Text>
+                  <MaterialCommunityIcons
+                    name={isExpanded ? "chevron-down" : "chevron-right"}
+                    size={18}
+                    color={COLORS.sidebarIcon}
+                  />
                 )}
               </TouchableOpacity>
 
@@ -135,10 +167,15 @@ export default function CustomDrawerContent(props) {
                         key={child.key}
                         style={[styles.subMenuItem, isChildActive && styles.subMenuItemActive]}
                         onPress={() => navigateTo(child.screen)}
-                        activeOpacity={0.7}
+                        activeOpacity={0.8}
                       >
                         <View style={[styles.subDot, isChildActive && styles.subDotActive]} />
-                        <Text style={[styles.subMenuLabel, isChildActive && styles.subMenuLabelActive]}>
+                        <Text
+                          style={[
+                            styles.subMenuLabel,
+                            isChildActive && styles.subMenuLabelActive,
+                          ]}
+                        >
                           {child.label}
                         </Text>
                       </TouchableOpacity>
@@ -149,13 +186,21 @@ export default function CustomDrawerContent(props) {
             </View>
           );
         })}
-      </ScrollView>
+      </DrawerContentScrollView>
 
-      {/* Footer */}
       <View style={styles.footer}>
         <View style={styles.divider} />
-        <TouchableOpacity style={styles.logoutBtn}>
-          <Text style={styles.logoutIcon}>🚪</Text>
+        <TouchableOpacity
+          style={styles.logoutBtn}
+          onPress={() => dispatch(logout())}
+          activeOpacity={0.8}
+        >
+          <MaterialCommunityIcons
+            name="logout"
+            size={18}
+            color={COLORS.danger}
+            style={styles.logoutIcon}
+          />
           <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
       </View>
@@ -169,8 +214,8 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.sidebarBg,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: SPACING.lg,
     paddingTop: 52,
     paddingBottom: SPACING.lg,
@@ -180,12 +225,12 @@ const styles = StyleSheet.create({
     height: 42,
     borderRadius: 21,
     backgroundColor: COLORS.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   avatarText: {
     color: COLORS.textInverse,
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: FONT.bold,
   },
   headerInfo: {
@@ -203,16 +248,16 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: '#1E293B',
+    backgroundColor: "#1E293B",
     marginHorizontal: SPACING.lg,
   },
-  menuScroll: {
-    flex: 1,
+  menuScrollContent: {
     paddingTop: SPACING.md,
+    paddingBottom: SPACING.lg,
   },
   menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.md,
     marginHorizontal: SPACING.sm,
@@ -223,8 +268,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.sidebarActive,
   },
   menuIcon: {
-    fontSize: 18,
-    width: 28,
+    marginRight: SPACING.sm,
   },
   menuLabel: {
     flex: 1,
@@ -236,17 +280,13 @@ const styles = StyleSheet.create({
     color: COLORS.sidebarTextActive,
     fontWeight: FONT.semibold,
   },
-  chevron: {
-    fontSize: 14,
-    color: COLORS.sidebarIcon,
-  },
   subMenu: {
-    paddingLeft: 44,
+    paddingLeft: 42,
     marginBottom: SPACING.xs,
   },
   subMenuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: SPACING.sm,
     paddingHorizontal: SPACING.md,
     borderRadius: RADIUS.sm,
@@ -279,15 +319,14 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   },
   logoutBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.md,
     marginHorizontal: SPACING.sm,
     marginTop: SPACING.sm,
   },
   logoutIcon: {
-    fontSize: 18,
     marginRight: SPACING.sm,
   },
   logoutText: {
