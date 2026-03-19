@@ -28,6 +28,7 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
+<<<<<<< Updated upstream
     "extra": {
       "eas": {
         "projectId": "bafa1ddc-d136-47f3-8ee9-eff3c1d8827f"
@@ -44,5 +45,10 @@
     "updates": {
       "url": "https://u.expo.dev/bafa1ddc-d136-47f3-8ee9-eff3c1d8827f"
     }
+=======
+    "plugins": [
+      "expo-font"
+    ]
+>>>>>>> Stashed changes
   }
 }
