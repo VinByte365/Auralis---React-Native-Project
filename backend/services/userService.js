@@ -114,3 +114,45 @@ exports.getHomeScreenData = async (request) => {
   // console.log(user);
   return user;
 };
+
+exports.addPushToken = async (request) => {
+  const { userId } = request.user || {};
+  const { token, platform = "unknown" } = request.body || {};
+
+  if (!token) throw new Error("push token is required");
+
+  const user = await User.findById(userId);
+  if (!user) throw new Error("user not found");
+
+  user.pushTokens = (user.pushTokens || []).filter(
+    (entry) => entry.token !== token,
+  );
+  user.pushTokens.push({ token, platform, lastSeenAt: new Date() });
+  await user.save();
+
+  return { pushTokens: user.pushTokens };
+};
+
+exports.removePushToken = async (request) => {
+  const { userId } = request.user || {};
+  const { token } = request.body || {};
+
+  if (!token) throw new Error("push token is required");
+
+  const user = await User.findByIdAndUpdate(
+    userId,
+    {
+      $pull: {
+        pushTokens: {
+          token,
+        },
+      },
+    },
+    {
+      new: true,
+    },
+  );
+
+  if (!user) throw new Error("user not found");
+  return { pushTokens: user.pushTokens };
+};
