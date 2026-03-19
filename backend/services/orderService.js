@@ -1,5 +1,6 @@
 const Order = require("../models/orderModel");
 const Product = require("../models/productModel");
+const mongoose = require("mongoose");
 const { createLog } = require("./activityLogsService");
 
 function toNumber(value, fallback = 0) {
@@ -7,153 +8,120 @@ function toNumber(value, fallback = 0) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
-function buildCheckoutCode() {
-  return `CHK-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
-}
-
 exports.confirmOrder = async (request = {}) => {
   const { userId } = request.user || {};
-  const { items = [], discounts = {}, cashierId } = request.body || {};
+  const {
+    items = [],
+    discounts = {},
+    paymentMethod = "cod",
+    paymentDetails = {},
+    deliveryAddress = "",
+  } = request.body || {};
 
   if (!userId) throw new Error("authenticated user is required");
   if (!Array.isArray(items) || items.length === 0) {
     throw new Error("order items are required");
   }
 
-  const productIds = items.map((item) => item.productId).filter(Boolean);
-  const products = await Product.find({
-    _id: { $in: productIds },
-    deletedAt: null,
-  }).populate("category");
+  const session = await mongoose.startSession();
 
-  const productMap = new Map(
-    products.map((product) => [String(product._id), product]),
-  );
+  try {
+    let createdOrder = null;
 
-  const formattedItems = items.map((item) => {
-    const product = productMap.get(String(item.productId));
-    if (!product) {
-      throw new Error(`product not found: ${item.productId}`);
-    }
+    await session.withTransaction(async () => {
+      const productIds = items.map((item) => item.productId).filter(Boolean);
+      const products = await Product.find({
+        _id: { $in: productIds },
+        deletedAt: null,
+      })
+        .populate("category")
+        .session(session);
 
-    const quantity = Math.max(toNumber(item.quantity, 1), 1);
-    const unitPrice =
-      product.saleActive && product.salePrice
-        ? product.salePrice
-        : product.price;
-    const itemTotal = unitPrice * quantity;
+      const productMap = new Map(
+        products.map((product) => [String(product._id), product]),
+      );
 
-    return {
-      product: product._id,
-      name: product.name,
-      sku: product.sku,
-      quantity,
-      unitPrice,
-      salePrice: product.salePrice,
-      saleActive: product.saleActive,
-      categoryType: product.category?.categoryName || "",
-      isBNPCEligible: Boolean(product.category?.isBNPC),
-      isBNPCProduct: Boolean(product.category?.isBNPC),
-      excludedFromDiscount: Boolean(product.excludedFromDiscount),
-      category: {
-        id: product.category?._id,
-        name: product.category?.categoryName,
-        isBNPC: Boolean(product.category?.isBNPC),
-      },
-      unit: product.unit,
-      itemTotal,
-    };
-  });
+      const formattedItems = items.map((item) => {
+        const product = productMap.get(String(item.productId));
+        if (!product) {
+          throw new Error(`product not found: ${item.productId}`);
+        }
 
-  const baseAmount = formattedItems.reduce(
-    (sum, item) => sum + item.itemTotal,
-    0,
-  );
-  const totalDiscount = toNumber(discounts.total, 0);
-  const finalAmountPaid = Math.max(baseAmount - totalDiscount, 0);
+        const quantity = Math.max(toNumber(item.quantity, 1), 1);
+        if (toNumber(product.stockQuantity, 0) < quantity) {
+          throw new Error(`insufficient stock for ${product.name}`);
+        }
 
-  const order = await Order.create({
-    user: userId,
-    cashier: cashierId || userId,
-    appUser: true,
-    checkoutCode: buildCheckoutCode(),
-    items: formattedItems,
-    bnpcProducts: formattedItems
-      .filter((item) => item.isBNPCEligible)
-      .map((item) => ({
-        productId: item.product,
-        name: item.name,
-        quantity: item.quantity,
-        price: item.unitPrice,
-        salePrice: item.salePrice,
-        saleActive: item.saleActive,
-        unit: item.unit,
-        category: item.category?.id,
-        categoryName: item.category?.name,
-        isBNPCEligible: item.isBNPCEligible,
-        requiresVerification: item.isBNPCEligible,
-        itemTotal: item.itemTotal,
-      })),
-    hasBNPCItems: formattedItems.some((item) => item.isBNPCEligible),
-    baseAmount,
-    bnpcEligibleSubtotal: formattedItems
-      .filter((item) => item.isBNPCEligible)
-      .reduce((sum, item) => sum + item.itemTotal, 0),
-    bnpcDiscount: {
-      total: toNumber(discounts.bnpc, 0),
-    },
-    promoDiscount: {
-      code: discounts.promoCode,
-      amount: toNumber(discounts.promo, 0),
-      serverValidated: false,
-    },
-    loyaltyDiscount: {
-      pointsUsed: toNumber(discounts.pointsUsed, 0),
-      amount: toNumber(discounts.loyalty, 0),
-      pointsEarned: Math.floor(finalAmountPaid / 100),
-    },
-    voucherDiscount: toNumber(discounts.voucher, 0),
-    discountBreakdown: {
-      bnpc: toNumber(discounts.bnpc, 0),
-      promo: toNumber(discounts.promo, 0),
-      loyalty: toNumber(discounts.loyalty, 0),
-      voucher: toNumber(discounts.voucher, 0),
-      total: totalDiscount,
-    },
-    finalAmountPaid,
-    pointsEarned: Math.floor(finalAmountPaid / 100),
-    itemStats: {
-      totalItems: formattedItems.length,
-      totalQuantity: formattedItems.reduce(
-        (sum, item) => sum + item.quantity,
+        const unitPrice =
+          product.saleActive && product.salePrice
+            ? product.salePrice
+            : product.price;
+        const itemTotal = unitPrice * quantity;
+
+        return {
+          product: product._id,
+          name: product.name,
+          sku: product.sku,
+          quantity,
+          unitPrice,
+          itemTotal,
+        };
+      });
+
+      const baseAmount = formattedItems.reduce(
+        (sum, item) => sum + item.itemTotal,
         0,
-      ),
-      bnpcEligibleItems: formattedItems.filter((item) => item.isBNPCEligible)
-        .length,
-      bnpcEligibleQuantity: formattedItems
-        .filter((item) => item.isBNPCEligible)
-        .reduce((sum, item) => sum + item.quantity, 0),
-    },
-    status: "CONFIRMED",
-  });
+      );
+      const totalDiscount = toNumber(discounts.total, 0);
+      const finalAmountPaid = Math.max(baseAmount - totalDiscount, 0);
 
-  await Product.bulkWrite(
-    formattedItems.map((item) => ({
-      updateOne: {
-        filter: { _id: item.product },
-        update: { $inc: { stockQuantity: -item.quantity } },
-      },
-    })),
-  );
+      const created = await Order.create(
+        [
+          {
+            user: userId,
+            items: formattedItems,
+            baseAmount,
+            finalAmountPaid,
+            paymentMethod,
+            paymentDetails,
+            deliveryAddress,
+            status: "PENDING",
+          },
+        ],
+        { session },
+      );
 
-  createLog(
-    userId,
-    "CHECKOUT",
-    "SUCCESS",
-    `Completed checkout ${order.checkoutCode}`,
-  );
+      createdOrder = created[0];
 
-  return order;
+      const stockUpdates = await Product.bulkWrite(
+        formattedItems.map((item) => ({
+          updateOne: {
+            filter: {
+              _id: item.product,
+              stockQuantity: { $gte: item.quantity },
+            },
+            update: { $inc: { stockQuantity: -item.quantity } },
+          },
+        })),
+        { session },
+      );
+
+      if (stockUpdates.matchedCount !== formattedItems.length) {
+        throw new Error("checkout failed due to stock changes");
+      }
+    });
+
+    createLog(
+      userId,
+      "CHECKOUT",
+      "SUCCESS",
+      `Completed checkout ${createdOrder._id}`,
+    );
+
+    return createdOrder;
+  } finally {
+    await session.endSession();
+  }
 };
 
 exports.getOrders = async (request = {}) => {
@@ -170,7 +138,12 @@ exports.getAllOrdersAdmin = async (request = {}) => {
 
   const filters = {};
   if (status) filters.status = status;
-  if (search) filters.checkoutCode = { $regex: search, $options: "i" };
+  if (search) {
+    filters.$or = [
+      { paymentMethod: { $regex: search, $options: "i" } },
+      { deliveryAddress: { $regex: search, $options: "i" } },
+    ];
+  }
 
   const numericPage = Math.max(Number(page), 1);
   const numericLimit = Math.min(Math.max(Number(limit), 1), 100);
