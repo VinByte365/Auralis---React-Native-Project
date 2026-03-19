@@ -20,7 +20,9 @@
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
-      }
+      },
+      "package": "com.singurity.auralis",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -30,9 +32,6 @@
         "projectId": "bafa1ddc-d136-47f3-8ee9-eff3c1d8827f"
       }
     },
-    "plugins": [
-      "expo-font",
-      "expo-sqlite"
-    ]
+    "plugins": ["expo-font", "expo-sqlite", "expo-notifications"]
   }
 }

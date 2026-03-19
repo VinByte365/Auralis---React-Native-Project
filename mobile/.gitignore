@@ -43,3 +43,4 @@ yarn-error.*
 
 #credentials
 singularity-9b3ba-firebase-adminsdk-fbsvc-1b6d65d220.json
+google-services.json
