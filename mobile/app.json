@@ -5,6 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
+    "scheme": "auralis",
     "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/splash-icon.png",
@@ -32,6 +33,16 @@
         "projectId": "bafa1ddc-d136-47f3-8ee9-eff3c1d8827f"
       }
     },
-    "plugins": ["expo-font", "expo-sqlite", "expo-notifications"]
+    "plugins": [
+      "expo-font",
+      "expo-sqlite",
+      "expo-notifications"
+    ],
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/bafa1ddc-d136-47f3-8ee9-eff3c1d8827f"
+    }
   }
 }
