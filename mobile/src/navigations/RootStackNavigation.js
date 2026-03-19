@@ -3,21 +3,6 @@ import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useSelector } from "react-redux";
 import AuthStackNavigation from "./AuthStackNavigation";
-<<<<<<< HEAD
-import AdminDrawerNavigation from "./AdminDrawerNavigation";
-
-const MergeNavigations = createNativeStackNavigator({
-  screens: {
-    auth: {
-      screen: AuthStackNavigation,
-    },
-    AdminDrawer: {
-      screen: AdminDrawerNavigation,
-    },
-  },
-  screenOptions: {
-    headerShown: false,
-=======
 import UserStackNavigation from "./UserStackNavigation";
 
 function SplashScreen() {
@@ -67,6 +52,5 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#fff",
->>>>>>> 22ed45e54210b5385b334f0d158be6c4826b6af3
   },
 });
