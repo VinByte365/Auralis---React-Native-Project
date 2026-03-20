@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { login, register } from "../redux/thunks/authThunk";
-
+import {useNavigation} from "@react-navigation/native"
 export default function AuthHooks() {
   const [credentials, setCredentials] = useState({
     email: "",
@@ -18,6 +18,7 @@ export default function AuthHooks() {
     (state) => state.auth,
   );
   const dispatch = useDispatch();
+  const navigation = useNavigation()
 
   const handleLoginInput = (field, value) => {
     setCredentials({ ...credentials, [field]: value });
@@ -130,6 +131,7 @@ export default function AuthHooks() {
     loading,
     error,
     user,
+    navigation,
     formError,
     handleLoginInput,
     handleRegisterInput,

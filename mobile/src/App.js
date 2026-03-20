@@ -5,7 +5,7 @@ import {
   NavigationContainer,
   useNavigationContainerRef,
 } from "@react-navigation/native";
-import { Provider, useDispatch } from "react-redux";
+import { Provider, useDispatch, useSelector } from "react-redux";
 import store from "./redux/store";
 import { hydrateSession } from "./redux/thunks/authThunk";
 import { hydrateCart } from "./redux/thunks/cartThunks";
@@ -16,12 +16,15 @@ import {
   subscribeToForegroundNotifications,
   subscribeToNotificationResponses,
 } from "./services/notificationService";
+import { registerPushToken } from "./services/userService";
 
 function Bootstrapper() {
   const dispatch = useDispatch();
+  const { isLoggedIn } = useSelector((state) => state.auth);
   const navigationRef = useNavigationContainerRef();
   const foregroundSubscription = useRef(null);
   const responseSubscription = useRef(null);
+  const syncedPushTokenRef = useRef("");
 
   useEffect(() => {
     dispatch(hydrateSession());
@@ -31,7 +34,19 @@ function Bootstrapper() {
 
     async function setupNotifications() {
       try {
-        const { token, error } = await registerForPushNotificationsAsync();
+        const { token, platform, error } =
+          await registerForPushNotificationsAsync();
+
+        if (
+          isLoggedIn &&
+          token &&
+          mounted &&
+          syncedPushTokenRef.current !== token
+        ) {
+          await registerPushToken(token, platform || "unknown");
+          syncedPushTokenRef.current = token;
+        }
+
         if (token && mounted) {
           console.log("Expo push token:", token);
         }
@@ -65,7 +80,7 @@ function Bootstrapper() {
       clearNotificationSubscription(foregroundSubscription.current);
       clearNotificationSubscription(responseSubscription.current);
     };
-  }, [dispatch]);
+  }, [dispatch, isLoggedIn]);
 
   return (
     <NavigationContainer ref={navigationRef}>

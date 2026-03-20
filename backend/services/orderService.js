@@ -1,11 +1,24 @@
 const Order = require("../models/orderModel");
 const Product = require("../models/productModel");
+const User = require("../models/userModel");
 const mongoose = require("mongoose");
 const { createLog } = require("./activityLogsService");
+const { sendPushToUser } = require("./notificationService");
 
 function toNumber(value, fallback = 0) {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+async function getPushTokenAndTrigger(userId, body, data = {}) {
+  if (!userId) return;
+
+  const user = await User.findById(userId).select("pushToken");
+  const pushToken = user?.pushToken?.token;
+
+  if (!pushToken) return;
+
+  await sendPushToUser(pushToken, "Auralis", body, data);
 }
 
 exports.confirmOrder = async (request = {}) => {
@@ -111,6 +124,15 @@ exports.confirmOrder = async (request = {}) => {
       }
     });
 
+    await getPushTokenAndTrigger(
+      userId,
+      `Your order ${createdOrder._id} is now pending`,
+      {
+        screen: "Order",
+        params: { orderId: String(createdOrder._id) },
+      },
+    );
+
     createLog(
       userId,
       "CHECKOUT",
@@ -184,6 +206,15 @@ exports.updateOrderStatus = async (request = {}) => {
       runValidators: true,
     },
   );
+
+   await getPushTokenAndTrigger(
+      order.user,
+      `Your order ${order._id} is now ${status}`,
+      {
+        screen: "Order",
+        params: { orderId: String(createdOrder._id) },
+      },
+    );
 
   if (!order) throw new Error("order not found");
   return order;
