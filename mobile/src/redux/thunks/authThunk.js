@@ -2,6 +2,7 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import * as authService from "../../services/authService";
 import { getErrorMessage } from "../../services/apiHelpers";
 import { removeToken, storeToken } from "../../utils/token";
+import { removePushToken } from "../../services/userService";
 
 export const login = createAsyncThunk(
   "auth/login",
@@ -51,6 +52,7 @@ export const hydrateSession = createAsyncThunk(
 
 export const logout = createAsyncThunk("auth/logout", async (_, thunkAPI) => {
   try {
+    await removePushToken();
     await authService.logout();
   } catch {
   } finally {

@@ -76,24 +76,21 @@ const userSchema = new mongoose.Schema(
         type: String,
       },
     },
-    pushTokens: [
-      {
-        token: {
-          type: String,
-          required: true,
-          trim: true,
-        },
-        platform: {
-          type: String,
-          enum: ["ios", "android", "web", "unknown"],
-          default: "unknown",
-        },
-        lastSeenAt: {
-          type: Date,
-          default: Date.now,
-        },
+    pushToken: {
+      token: {
+        type: String,
+        trim: true,
       },
-    ],
+      platform: {
+        type: String,
+        enum: ["ios", "android", "web", "unknown"],
+        default: "unknown",
+      },
+      lastUpdate: {
+        type: Date,
+        default: Date.now,
+      },
+    },
     role: {
       type: String,
       default: "user",

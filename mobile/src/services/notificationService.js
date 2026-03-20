@@ -2,6 +2,14 @@ import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
 import Constants from "expo-constants";
 
+function resolvePlatform() {
+  const os = String(Device.osName || "").toLowerCase();
+  if (os.includes("android")) return "android";
+  if (os.includes("ios")) return "ios";
+  if (os.includes("web")) return "web";
+  return "unknown";
+}
+
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowBanner: true,
@@ -33,10 +41,12 @@ function getProjectId() {
 
 export async function registerForPushNotificationsAsync() {
   await ensureAndroidChannel();
+  const platform = resolvePlatform();
 
   if (!Device.isDevice) {
     return {
       token: "",
+      platform,
       error: "Push notifications require a physical device.",
     };
   }
@@ -52,6 +62,7 @@ export async function registerForPushNotificationsAsync() {
   if (finalStatus !== "granted") {
     return {
       token: "",
+      platform,
       error: "Push notification permission was not granted.",
     };
   }
@@ -64,6 +75,7 @@ export async function registerForPushNotificationsAsync() {
 
   return {
     token: tokenResponse?.data || "",
+    platform,
     error: "",
   };
 }
@@ -82,7 +94,15 @@ export function subscribeToNotificationResponses(onResponse) {
 
 export function clearNotificationSubscription(subscription) {
   if (!subscription) return;
-  Notifications.removeNotificationSubscription(subscription);
+
+  if (typeof subscription.remove === "function") {
+    subscription.remove();
+    return;
+  }
+
+  if (typeof Notifications.removeNotificationSubscription === "function") {
+    Notifications.removeNotificationSubscription(subscription);
+  }
 }
 
 export function handleNotificationNavigation(navigationRef, response) {
