@@ -50,10 +50,8 @@ export const registerPushToken = async (token, platform = "unknown") => {
   return unwrapResult(response);
 };
 
-export const removePushToken = async (token) => {
-  const response = await axiosInstance.delete("/api/v1/user/push-token", {
-    data: { token },
-  });
+export const removePushToken = async () => {
+  const response = await axiosInstance.delete("/api/v1/user/push-token");
 
   return unwrapResult(response);
 };

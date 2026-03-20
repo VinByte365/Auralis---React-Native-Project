@@ -119,40 +119,32 @@ exports.addPushToken = async (request) => {
   const { userId } = request.user || {};
   const { token, platform = "unknown" } = request.body || {};
 
+  if (!userId) throw new Error("missing authenticated user");
   if (!token) throw new Error("push token is required");
 
   const user = await User.findById(userId);
-  if (!user) throw new Error("user not found");
+  if (!user) throw new Error("failed to find the user");
 
-  user.pushTokens = (user.pushTokens || []).filter(
-    (entry) => entry.token !== token,
-  );
-  user.pushTokens.push({ token, platform, lastSeenAt: new Date() });
+  user.pushToken = {
+    token,
+    platform,
+    lastUpdate: Date.now(),
+  };
+
   await user.save();
 
-  return { pushTokens: user.pushTokens };
+  return user.pushToken;
 };
 
 exports.removePushToken = async (request) => {
   const { userId } = request.user || {};
-  const { token } = request.body || {};
+  if (!userId) throw new Error("missing authenticated user");
 
-  if (!token) throw new Error("push token is required");
+  const user = await User.findById(userId);
+  if (!user) throw new Error("failed to find the user");
 
-  const user = await User.findByIdAndUpdate(
-    userId,
-    {
-      $pull: {
-        pushTokens: {
-          token,
-        },
-      },
-    },
-    {
-      new: true,
-    },
-  );
+  user.pushToken = undefined;
+  await user.save();
 
-  if (!user) throw new Error("user not found");
-  return { pushTokens: user.pushTokens };
+  return { removed: true };
 };
