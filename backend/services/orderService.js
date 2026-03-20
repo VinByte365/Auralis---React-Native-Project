@@ -207,7 +207,14 @@ exports.updateOrderStatus = async (request = {}) => {
     },
   );
 
-  
+   await getPushTokenAndTrigger(
+      order.user,
+      `Your order ${order._id} is now ${status}`,
+      {
+        screen: "Order",
+        params: { orderId: String(createdOrder._id) },
+      },
+    );
 
   if (!order) throw new Error("order not found");
   return order;
