@@ -1,6 +1,7 @@
 const User = require("../models/userModel");
 const { createLog } = require("./activityLogsService");
 const bcrypt = require("bcrypt");
+const admin = require("../configs/firebase");
 
 exports.register = async (request) => {
   if (!request.body) throw new Error("undefined body");
@@ -71,47 +72,87 @@ exports.verifyToken = async (request) => {
   return { user: userData };
 };
 
-// exports.googleAuth = async (request, response) => {
-//   const { token } = request.body;
-//   const decoded = await admin.auth().verifyIdToken(token);
+/**
+ * Google Sign-In Authentication
+ * Verifies Firebase ID token and creates/updates user account
+ * Supports account linking by email
+ */
+exports.googleAuth = async (request, response) => {
+  try {
+    const { idToken, email, name, photoURL, firebaseUid } = request.body;
 
-//   const { uid, email, name, picture } = decoded;
-//   let user = await User.findOne({ firebaseUid: uid });
+    if (!idToken) throw new Error("Missing ID token");
 
-//   if (!user) {
-//     user = await User.create({
-//       firebaseUid: uid,
-//       name,
-//       email,
-//       avatar: {
-//         url: picture,
-//       },
-//     });
-//   }
+    // Verify the Firebase ID token
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
 
-//   if (!user) throw new Error("user is undefined");
-//   const jwtToken = await user.getToken();
+    if (!decodedToken.email) {
+      throw new Error("Invalid token: missing email");
+    }
 
-//   response.cookie("token", jwtToken, {
-//     httpOnly: true,
-//     maxAge: 1000 * 60 * 60 * 24 * 365 * 10,
-//     secure: true,
-//     sameSite: "none",
-//     path: "/",
-//   });
+    // Check if user exists by email (account linking)
+    let user = await User.findOne({ email: decodedToken.email });
 
-//   createLog(
-//     user._id,
-//     "LOGIN",
-//     "SUCCESS",
-//     `${user.name} logged in to the system as ${user.role}`,
-//   );
+    if (user) {
+      // Update existing user with Firebase UID if not already set
+      if (!user.firebaseUid) {
+        user.firebaseUid = decodedToken.uid;
+        if (name && !user.name) user.name = name;
+        if (photoURL && !user.avatar) {
+          user.avatar = { url: photoURL };
+        }
+        await user.save();
+      }
+    } else {
+      // Create new user from Google auth data
+      user = await User.create({
+        firebaseUid: decodedToken.uid,
+        name: decodedToken.name || name || decodedToken.email,
+        email: decodedToken.email,
+        avatar: photoURL ? { url: photoURL } : { url: decodedToken.picture },
+        status: "active", // Auto-activate Google users
+      });
+    }
 
-//   return {
-//     token: jwtToken,
-//     role: user.role,
-//   };
-// };
+    if (!user) throw new Error("Failed to create/fetch user");
+
+    // Generate our own JWT token
+    const jwtToken = await user.getToken();
+    if (!jwtToken) throw new Error("Failed to generate JWT token");
+
+    // Set secure cookie
+    response.cookie("token", jwtToken, {
+      httpOnly: true,
+      maxAge: 1000 * 60 * 60 * 24 * 365 * 10,
+      secure: true,
+      sameSite: "none",
+      path: "/",
+    });
+
+    // Create activity log
+    await createLog(
+      user._id,
+      "LOGIN",
+      "SUCCESS",
+      `${user.name} logged in via Google`,
+    );
+
+    return {
+      user: {
+        userId: String(user._id),
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        status: user.status,
+        avatar: user.avatar,
+      },
+      token: jwtToken,
+    };
+  } catch (error) {
+    console.error("Google Auth Error:", error);
+    throw error;
+  }
+};
 
 exports.logout = async (request, response) => {
   response.clearCookie("token", {

@@ -1,5 +1,6 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import * as authService from "../../services/authService";
+import * as googleAuthService from "../../services/googleAuthService";
 import { getErrorMessage } from "../../services/apiHelpers";
 import { removeToken, storeToken } from "../../utils/token";
 import { removePushToken } from "../../services/userService";
@@ -61,3 +62,18 @@ export const logout = createAsyncThunk("auth/logout", async (_, thunkAPI) => {
 
   return true;
 });
+
+export const googleSignIn = createAsyncThunk(
+  "auth/googleSignIn",
+  async (_, thunkAPI) => {
+    try {
+      const result = await googleAuthService.googleSignIn();
+      await storeToken(result.token);
+      return result;
+    } catch (error) {
+      return thunkAPI.rejectWithValue({
+        error: getErrorMessage(error, "Google Sign-In failed"),
+      });
+    }
+  },
+);

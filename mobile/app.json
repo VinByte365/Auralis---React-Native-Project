@@ -1,6 +1,7 @@
 {
   "expo": {
     "name": "Auralis",
+    "owner": "singurity",
     "slug": "auralis",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -36,7 +37,9 @@
     "plugins": [
       "expo-font",
       "expo-sqlite",
-      "expo-notifications"
+      "expo-notifications",
+      "expo-web-browser",
+      "@react-native-google-signin/google-signin"
     ],
     "runtimeVersion": {
       "policy": "appVersion"
