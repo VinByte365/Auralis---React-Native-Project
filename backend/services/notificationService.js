@@ -58,7 +58,9 @@ async function sendPromotionNotificationToUsers({
     .map((user) => String(extractPushToken(user) || "").trim())
     .filter((token) => Expo.isExpoPushToken(token));
 
-  if (validTokens.length === 0) {
+  const uniqueTokens = [...new Set(validTokens)];
+
+  if (uniqueTokens.length === 0) {
     return {
       sent: false,
       reason: "no_valid_push_tokens",
@@ -66,7 +68,7 @@ async function sendPromotionNotificationToUsers({
     };
   }
 
-  const messages = validTokens.map((token) => ({
+  const messages = uniqueTokens.map((token) => ({
     to: token,
     sound: "default",
     title,
@@ -84,7 +86,8 @@ async function sendPromotionNotificationToUsers({
   return {
     sent: true,
     attemptedUsers: users.length,
-    successfulTokens: validTokens.length,
+    successfulTokens: uniqueTokens.length,
+    deduplicatedTokens: validTokens.length - uniqueTokens.length,
     tickets,
   };
 }

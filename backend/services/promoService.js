@@ -1,5 +1,80 @@
 const mongoose = require("mongoose");
 const Promo = require("../models/promoModel");
+const { sendPromotionNotificationToUsers } = require("./notificationService");
+
+function formatPromoValue(promoType, value) {
+  const amount = Number(value || 0);
+  if (promoType === "fixed") {
+    return `PHP ${amount.toLocaleString()}`;
+  }
+  return `${amount}%`;
+}
+
+function buildPromoNotification({ promo, action = "created" } = {}) {
+  const promoName = String(
+    promo?.promoName?.promo || promo?.promo || "New Promo",
+  ).trim();
+  const promoType = String(promo?.promoType || "percentage").toLowerCase();
+  const valueText = formatPromoValue(promoType, promo?.value);
+  const code = String(promo?.code || "").trim();
+  const isActive = Boolean(promo?.active);
+
+  let title = "New Sale Alert";
+  let body = `Save ${valueText} on your next order with ${promoName}.`;
+
+  if (action === "updated") {
+    title = "Promo Just Updated";
+    body = `Good news! ${promoName} was updated. Enjoy ${valueText} savings.`;
+  }
+
+  if (!isActive) {
+    title = "Promo Update";
+    body = `${promoName} was updated. Check the latest promo details in the app.`;
+  }
+
+  if (code) {
+    body += ` Use code ${code} at checkout.`;
+  }
+
+  return {
+    title,
+    body,
+    data: {
+      screen: "NotificationDetails",
+      params: {
+        type: "promo",
+        title,
+        message: body,
+        promoId: String(promo?._id || ""),
+        promoName,
+        promoType,
+        scope: String(promo?.scope || "cart"),
+        code,
+        value: String(promo?.value || 0),
+        usageLimit: String(promo?.usageLimit || 0),
+        useCount: String(promo?.usedCount || 0),
+      },
+    },
+  };
+}
+
+async function notifyPromoUsers(promo, action = "created") {
+  try {
+    const payload = buildPromoNotification({ promo, action });
+    const result = await sendPromotionNotificationToUsers(payload);
+
+    if (!result?.sent) {
+      console.log(
+        `[Push] Promo notification skipped (${action}) for ${promo?._id}: ${result?.reason || "unknown_reason"}`,
+      );
+    }
+  } catch (error) {
+    console.log(
+      `[Push] Promo notification failed (${action}) for ${promo?._id}:`,
+      error?.message || error,
+    );
+  }
+}
 
 function toBoolean(value, fallback = false) {
   if (typeof value === "boolean") return value;
@@ -158,7 +233,9 @@ exports.getAll = async (request = {}) => {
 
 exports.create = async (request = {}) => {
   const payload = normalizeCreatePayload(request.body || {});
-  return Promo.create(payload);
+  const createdPromo = await Promo.create(payload);
+  await notifyPromoUsers(createdPromo, "created");
+  return createdPromo;
 };
 
 exports.update = async (request = {}) => {
@@ -172,6 +249,7 @@ exports.update = async (request = {}) => {
   });
 
   if (!updated) throw new Error("promo not found");
+  await notifyPromoUsers(updated, "updated");
   return updated;
 };
 
