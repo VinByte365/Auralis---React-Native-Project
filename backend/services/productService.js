@@ -1,4 +1,5 @@
 const Product = require("../models/productModel");
+const Review = require("../models/reviewModel");
 const { uploadImage, deleteAssets } = require("../utils/cloundinaryUtil");
 const { createLog } = require("./activityLogsService");
 const slugify = require("slugify");
@@ -69,7 +70,35 @@ const create = async (request) => {
 };
 
 const getAll = async (request) => {
+  const { minRating } = request.query || {};
   const filters = buildProductFilters(request.query || {});
+
+  const normalizedMinRating = Number(minRating);
+  if (Number.isFinite(normalizedMinRating) && normalizedMinRating > 0) {
+    const ratingMatches = await Review.aggregate([
+      {
+        $group: {
+          _id: "$product",
+          averageRating: { $avg: "$rating" },
+        },
+      },
+      {
+        $match: {
+          averageRating: { $gte: normalizedMinRating },
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+        },
+      },
+    ]);
+
+    filters._id = {
+      $in: ratingMatches.map((item) => item._id),
+    };
+  }
+
   const products = await Product.find(filters)
     .populate("category")
     .sort({ createdAt: -1 });

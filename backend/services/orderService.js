@@ -14,11 +14,38 @@ async function getPushTokenAndTrigger(userId, body, data = {}) {
   if (!userId) return;
 
   const user = await User.findById(userId).select("pushToken");
-  const pushToken = user?.pushToken?.token;
+  const pushToken =
+    typeof user?.pushToken === "string"
+      ? user.pushToken
+      : user?.pushToken?.token;
 
   if (!pushToken) return;
 
-  await sendPushToUser(pushToken, "Auralis", body, data);
+  try {
+    const result = await sendPushToUser(pushToken, "Auralis", body, data);
+
+    if (!result?.sent) {
+      console.log(
+        `[Push] Skipped notification for user ${userId}: ${result?.reason || "unknown_reason"}`,
+      );
+      return;
+    }
+
+    const hasErrorTicket = (result.tickets || []).some(
+      (ticket) => ticket?.status === "error",
+    );
+    if (hasErrorTicket) {
+      console.log(
+        `[Push] Expo returned error ticket(s) for user ${userId}`,
+        result.tickets,
+      );
+    }
+  } catch (error) {
+    console.log(
+      `[Push] Failed to send notification for user ${userId}:`,
+      error?.message || error,
+    );
+  }
 }
 
 exports.confirmOrder = async (request = {}) => {

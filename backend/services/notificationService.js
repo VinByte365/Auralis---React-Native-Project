@@ -1,13 +1,19 @@
 const { Expo } = require("expo-server-sdk");
-const User = require("../models/userModel")
 const expo = new Expo();
 
 async function sendPushToUser(pushToken, title = "Auralis", body, data = {}) {
-  if (!Expo.isExpoPushToken(pushToken)) return;
+  const token = String(pushToken || "").trim();
+  if (!token) {
+    return { sent: false, reason: "missing_push_token" };
+  }
+
+  if (!Expo.isExpoPushToken(token)) {
+    return { sent: false, reason: "invalid_expo_push_token", token };
+  }
 
   const message = [
     {
-      to: pushToken,
+      to: token,
       sound: "default",
       title,
       body,
@@ -16,7 +22,17 @@ async function sendPushToUser(pushToken, title = "Auralis", body, data = {}) {
   ];
 
   const chunks = expo.chunkPushNotifications(message);
-  for (const chunk of chunks) await expo.sendPushNotificationsAsync(chunk);
+  const tickets = [];
+
+  for (const chunk of chunks) {
+    const chunkTickets = await expo.sendPushNotificationsAsync(chunk);
+    tickets.push(...chunkTickets);
+  }
+
+  return {
+    sent: true,
+    tickets,
+  };
 }
 
 module.exports = {

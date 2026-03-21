@@ -20,11 +20,12 @@ import { registerPushToken } from "./services/userService";
 
 function Bootstrapper() {
   const dispatch = useDispatch();
-  const { isLoggedIn } = useSelector((state) => state.auth);
+  const { isLoggedIn, user } = useSelector((state) => state.auth);
   const navigationRef = useNavigationContainerRef();
   const foregroundSubscription = useRef(null);
   const responseSubscription = useRef(null);
   const syncedPushTokenRef = useRef("");
+  const authIdentity = String(user?._id || user?.userId || user?.id || "");
 
   useEffect(() => {
     dispatch(hydrateSession());
@@ -37,14 +38,20 @@ function Bootstrapper() {
         const { token, platform, error } =
           await registerForPushNotificationsAsync();
 
+        if (!isLoggedIn) {
+          syncedPushTokenRef.current = "";
+        }
+
+        const syncKey = `${authIdentity || "session"}:${token || ""}`;
+
         if (
           isLoggedIn &&
           token &&
           mounted &&
-          syncedPushTokenRef.current !== token
+          syncedPushTokenRef.current !== syncKey
         ) {
           await registerPushToken(token, platform || "unknown");
-          syncedPushTokenRef.current = token;
+          syncedPushTokenRef.current = syncKey;
         }
 
         if (token && mounted) {
@@ -80,7 +87,7 @@ function Bootstrapper() {
       clearNotificationSubscription(foregroundSubscription.current);
       clearNotificationSubscription(responseSubscription.current);
     };
-  }, [dispatch, isLoggedIn]);
+  }, [dispatch, isLoggedIn, authIdentity]);
 
   return (
     <NavigationContainer ref={navigationRef}>
