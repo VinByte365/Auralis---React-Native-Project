@@ -1,3 +1,3 @@
-export const API_URL = "http://10.254.82.225:8080"
-export const API_WEBSOCKET = "http://10.254.82.225:8080"
+export const API_URL = "https://auralis-react-native-project.onrender.com"
+export const API_WEBSOCKET = "https://auralis-react-native-project.onrender.com"
 export const isDevelopment = true
