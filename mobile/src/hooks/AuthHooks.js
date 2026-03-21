@@ -12,7 +12,6 @@ export default function AuthHooks() {
     password: "",
     email: "",
   });
-
   const [formError, setFormError] = useState({});
   const { loading, user, error, isLoggedIn } = useSelector(
     (state) => state.auth,

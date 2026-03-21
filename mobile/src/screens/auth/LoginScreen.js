@@ -83,9 +83,7 @@ export default function LoginScreen() {
           <Text
             style={styles.registerLink}
             onPress={() =>
-              navigation.navigate("auth", {
-                screen: "Register",
-              })
+              navigation.navigate("Register")
             }
           >
             Sign up

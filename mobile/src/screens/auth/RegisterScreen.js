@@ -96,9 +96,7 @@ export default function RegisterScreen() {
           <Text
             style={styles.signInLink}
             onPress={() =>
-              navigation.navigate("auth", {
-                screen: "Login",
-              })
+              navigation.navigate("Login")
             }
           >
             Sign in
