@@ -16,12 +16,49 @@ function formatPrice(value) {
   return `PHP ${amount.toLocaleString()}`;
 }
 
+function normalizeParams(rawParams) {
+  let normalized = rawParams || {};
+
+  for (let index = 0; index < 3; index += 1) {
+    if (!normalized || typeof normalized !== "object") break;
+
+    if (typeof normalized.params === "string") {
+      try {
+        normalized = JSON.parse(normalized.params);
+        continue;
+      } catch {
+        break;
+      }
+    }
+
+    if (
+      normalized.params &&
+      typeof normalized.params === "object" &&
+      Object.keys(normalized.params).length > 0
+    ) {
+      normalized = normalized.params;
+      continue;
+    }
+
+    break;
+  }
+
+  return normalized && typeof normalized === "object" ? normalized : {};
+}
+
 export default function NotificationDetailsScreen({ route, navigation }) {
-  const params = route?.params || {};
+  const params = useMemo(() => normalizeParams(route?.params), [route?.params]);
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState("");
 
+  const inferredType =
+    params?.type ||
+    (params?.promoId || params?.promoName || params?.code
+      ? "promo"
+      : "promotion");
+  const notificationType = String(inferredType).toLowerCase();
+  const isPromoNotification = notificationType === "promo";
   const title = params?.title || "Promotion Details";
   const message = params?.message || "Promotion information";
   const productName = product?.name || params?.productName || "N/A";
@@ -30,13 +67,43 @@ export default function NotificationDetailsScreen({ route, navigation }) {
   const newPrice = params?.newPrice;
   const productId = params?.productId;
 
+  const promoName = params?.promoName || "N/A";
+  const promoValue = params?.value;
+  const promoType = String(params?.promoType || "percentage").toLowerCase();
+  const promoCode = params?.code || "N/A";
+  const promoScope = params?.scope || "N/A";
+  const promoUsageLimit = params?.usageLimit;
+  const promoUseCount = params?.useCount;
+
+  useEffect(() => {
+    console.log("[Push][Details] Route params (raw):", route?.params || {});
+    console.log("[Push][Details] Route params (normalized):", params);
+    console.log("[Push][Details] Type resolution:", {
+      inferredType,
+      notificationType,
+      isPromoNotification,
+    });
+  }, [
+    inferredType,
+    isPromoNotification,
+    notificationType,
+    params,
+    route?.params,
+  ]);
+
   useEffect(() => {
     let active = true;
 
     async function loadProduct() {
+      if (isPromoNotification) {
+        setProduct(null);
+        setLoadError("");
+        return;
+      }
+
       if (!productId) {
         setProduct(null);
-        setLoadError("Product ID is missing from this notification.");
+        setLoadError("");
         return;
       }
 
@@ -65,7 +132,7 @@ export default function NotificationDetailsScreen({ route, navigation }) {
     return () => {
       active = false;
     };
-  }, [productId]);
+  }, [isPromoNotification, productId]);
 
   const resolvedBasePrice =
     Number(product?.price || oldPrice || 0) > 0
@@ -84,8 +151,32 @@ export default function NotificationDetailsScreen({ route, navigation }) {
         )
       : Number(discountPercent) || 0;
 
-  const details = useMemo(
-    () => [
+  const details = useMemo(() => {
+    if (isPromoNotification) {
+      const numericPromoValue = Number(promoValue || 0);
+      const promoValueText =
+        Number.isFinite(numericPromoValue) && numericPromoValue > 0
+          ? promoType === "fixed"
+            ? formatPrice(numericPromoValue)
+            : `${numericPromoValue}%`
+          : "N/A";
+
+      return [
+        { label: "Promo", value: promoName },
+        { label: "Discount", value: promoValueText },
+        { label: "Promo Code", value: promoCode || "N/A" },
+        { label: "Scope", value: promoScope || "N/A" },
+        {
+          label: "Usage",
+          value:
+            promoUsageLimit !== undefined || promoUseCount !== undefined
+              ? `${Number(promoUseCount || 0)} / ${Number(promoUsageLimit || 0)}`
+              : "N/A",
+        },
+      ];
+    }
+
+    return [
       { label: "Product", value: productName },
       {
         label: "Discount",
@@ -93,9 +184,21 @@ export default function NotificationDetailsScreen({ route, navigation }) {
       },
       { label: "Old Price", value: formatPrice(resolvedBasePrice) },
       { label: "New Price", value: formatPrice(resolvedSalePrice) },
-    ],
-    [productName, resolvedBasePrice, resolvedDiscount, resolvedSalePrice],
-  );
+    ];
+  }, [
+    isPromoNotification,
+    productName,
+    resolvedBasePrice,
+    resolvedDiscount,
+    resolvedSalePrice,
+    promoCode,
+    promoName,
+    promoScope,
+    promoType,
+    promoUsageLimit,
+    promoUseCount,
+    promoValue,
+  ]);
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -135,18 +238,20 @@ export default function NotificationDetailsScreen({ route, navigation }) {
         ))}
       </View>
 
-      <TouchableOpacity
-        style={[styles.primaryBtn, !productId && styles.disabledBtn]}
-        disabled={!productId}
-        onPress={() =>
-          navigation.navigate("Home", {
-            screen: "Product",
-            params: { productId },
-          })
-        }
-      >
-        <Text style={styles.primaryBtnText}>View Product</Text>
-      </TouchableOpacity>
+      {!isPromoNotification ? (
+        <TouchableOpacity
+          style={[styles.primaryBtn, !productId && styles.disabledBtn]}
+          disabled={!productId}
+          onPress={() =>
+            navigation.navigate("Home", {
+              screen: "Product",
+              params: { productId },
+            })
+          }
+        >
+          <Text style={styles.primaryBtnText}>View Product</Text>
+        </TouchableOpacity>
+      ) : null}
     </SafeAreaView>
   );
 }
