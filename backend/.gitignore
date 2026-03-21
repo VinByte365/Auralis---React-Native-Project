@@ -1,4 +1,6 @@
 configs/.env
+configs/singularity-9b3ba-firebase-adminsdk-fbsvc-559eeb3c8e.json
+**/*firebase-adminsdk-*.json
 node_modules/
 singularity-9b3ba-firebase-adminsdk-fbsvc-5b80cb32c8.json
 blockchain/
