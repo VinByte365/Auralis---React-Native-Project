@@ -108,7 +108,33 @@ export function clearNotificationSubscription(subscription) {
 export function handleNotificationNavigation(navigationRef, response) {
   const data = response?.notification?.request?.content?.data || {};
   const targetRoute = data?.screen || data?.route || "";
-  const params = data?.params || {};
+  let params = data?.params || {};
+
+  if (typeof params === "string") {
+    try {
+      params = JSON.parse(params);
+    } catch {
+      params = {};
+    }
+  }
+
+  if (
+    !params ||
+    typeof params !== "object" ||
+    Object.keys(params).length === 0
+  ) {
+    const {
+      screen,
+      route,
+      to,
+      target,
+      categoryIdentifier,
+      subtitle,
+      sound,
+      ...rest
+    } = data || {};
+    params = rest;
+  }
 
   if (!navigationRef?.isReady?.()) return;
 

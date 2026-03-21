@@ -5,6 +5,7 @@ const category = require("./categoryRoute");
 const activityLogs = require("./activityLogsRoute");
 const order = require("./orderRoutes");
 const adminDashboard = require("./adminDashboardRoute");
+const promo = require("./promoRoute");
 const storeSettings = require("./storeSettingsRoute");
 const review = require("./reviewRoute");
 
@@ -18,4 +19,5 @@ module.exports = {
   activityLogs,
   adminDashboard,
   storeSettings,
+  promo,
 };

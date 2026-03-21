@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { login, register } from "../redux/thunks/authThunk";
-import {useNavigation} from "@react-navigation/native"
+import { login, register, googleSignIn } from "../redux/thunks/authThunk";
+import { useNavigation } from "@react-navigation/native";
 export default function AuthHooks() {
   const [credentials, setCredentials] = useState({
     email: "",
@@ -12,13 +12,12 @@ export default function AuthHooks() {
     password: "",
     email: "",
   });
-
   const [formError, setFormError] = useState({});
   const { loading, user, error, isLoggedIn } = useSelector(
     (state) => state.auth,
   );
   const dispatch = useDispatch();
-  const navigation = useNavigation()
+  const navigation = useNavigation();
 
   const handleLoginInput = (field, value) => {
     setCredentials({ ...credentials, [field]: value });
@@ -124,6 +123,21 @@ export default function AuthHooks() {
     }
   };
 
+  const googleSignInHandler = async () => {
+    try {
+      setFormError({});
+      await dispatch(googleSignIn()).unwrap();
+    } catch (submissionError) {
+      setFormError((current) => ({
+        ...current,
+        general:
+          submissionError?.error ||
+          submissionError?.message ||
+          "Google Sign-In failed",
+      }));
+    }
+  };
+
   return {
     credentials,
     registerForm,
@@ -137,5 +151,6 @@ export default function AuthHooks() {
     handleRegisterInput,
     loginSubmit,
     registerSubmit,
+    googleSignInHandler,
   };
 }

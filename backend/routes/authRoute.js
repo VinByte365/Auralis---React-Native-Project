@@ -5,8 +5,11 @@ const authController = require("../controllers/authController");
 const authMiddleware = require("../middlewares/authMiddleware");
 
 router.route("/signIn").post(authController.authenticate);
+router.route("/google").post(authController.googleAuth);
 
-router.route("/me").post(authMiddleware.verifyToken, authController.verifyUserToken);
+router
+  .route("/me")
+  .post(authMiddleware.verifyToken, authController.verifyUserToken);
 
 router.route("/register").post(authController.registerUser);
 router.route("/login").post(authController.LoginUser);

@@ -13,6 +13,7 @@ const {
   review,
   adminDashboard,
   storeSettings,
+  promo,
 } = require("./routes/index");
 const productModel = require("./models/productModel");
 
@@ -50,6 +51,7 @@ app.use("/api/v1", user);
 app.use("/api/v1", category);
 app.use("/api/v1", order);
 app.use("/api/v1", review);
+app.use("/api/v1", promo);
 app.use("/api/v1/logs", activityLogs);
 app.use("/api/v1/admin", adminDashboard);
 app.use("/api/v1/admin/settings", storeSettings);

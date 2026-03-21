@@ -50,6 +50,16 @@ export default function ProductScreen({ route, navigation }) {
   const reviewSectionData = Array.isArray(reviews) ? reviews : [];
   const reviewSectionLoading = reviewLoading;
   const reviewSectionError = reviewError;
+  const basePrice = Number(productDetails?.price || 0);
+  const salePrice = Number(productDetails?.salePrice || 0);
+  const hasDiscount =
+    Boolean(productDetails?.saleActive) &&
+    salePrice > 0 &&
+    salePrice < basePrice;
+  const discountPercent =
+    hasDiscount && basePrice > 0
+      ? Math.round(((basePrice - salePrice) / basePrice) * 100)
+      : 0;
 
   if (!productId) {
     return (
@@ -110,7 +120,21 @@ export default function ProductScreen({ route, navigation }) {
             </View>
 
             <Text style={styles.productName}>{productDetails.name}</Text>
-            <Text style={styles.productPrice}>PHP {displayPrice}</Text>
+            <View style={styles.priceWrap}>
+              <Text style={styles.productPrice}>PHP {displayPrice}</Text>
+              {hasDiscount ? (
+                <>
+                  <Text style={styles.productPriceOriginal}>
+                    PHP {basePrice.toFixed(2)}
+                  </Text>
+                  <View style={styles.discountTag}>
+                    <Text style={styles.discountTagText}>
+                      -{discountPercent}% OFF
+                    </Text>
+                  </View>
+                </>
+              ) : null}
+            </View>
 
             <View style={styles.metaRow}>
               <View style={styles.metaItem}>
@@ -185,38 +209,72 @@ export default function ProductScreen({ route, navigation }) {
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.suggestionsContainer}
               >
-                {suggestedProducts.map((item, index) => (
-                  <TouchableOpacity
-                    key={item._id}
-                    style={[
-                      styles.suggestionCard,
-                      index === suggestedProducts.length - 1 &&
-                        styles.lastSuggestionCard,
-                    ]}
-                    onPress={() =>
-                      navigation.push("Product", { productId: item._id })
-                    }
-                    activeOpacity={0.7}
-                  >
-                    <View style={styles.suggestionImageContainer}>
-                      <Image
-                        source={
-                          item?.images?.[0]?.url
-                            ? { uri: item.images[0].url }
-                            : productImagePlaceholder
+                {suggestedProducts.map((item, index) =>
+                  (() => {
+                    const suggestedBasePrice = Number(item?.price || 0);
+                    const suggestedSalePrice = Number(item?.salePrice || 0);
+                    const suggestedHasDiscount =
+                      Boolean(item?.saleActive) &&
+                      suggestedSalePrice > 0 &&
+                      suggestedSalePrice < suggestedBasePrice;
+                    const suggestedDiscountPercent =
+                      suggestedHasDiscount && suggestedBasePrice > 0
+                        ? Math.round(
+                            ((suggestedBasePrice - suggestedSalePrice) /
+                              suggestedBasePrice) *
+                              100,
+                          )
+                        : 0;
+
+                    return (
+                      <TouchableOpacity
+                        key={item._id}
+                        style={[
+                          styles.suggestionCard,
+                          index === suggestedProducts.length - 1 &&
+                            styles.lastSuggestionCard,
+                        ]}
+                        onPress={() =>
+                          navigation.push("Product", { productId: item._id })
                         }
-                        style={styles.suggestionImage}
-                        resizeMode="contain"
-                      />
-                    </View>
-                    <Text style={styles.suggestionName} numberOfLines={2}>
-                      {item.name}
-                    </Text>
-                    <Text style={styles.suggestionPrice}>
-                      PHP {Number(item.price || 0).toFixed(2)}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+                        activeOpacity={0.7}
+                      >
+                        <View style={styles.suggestionImageContainer}>
+                          <Image
+                            source={
+                              item?.images?.[0]?.url
+                                ? { uri: item.images[0].url }
+                                : productImagePlaceholder
+                            }
+                            style={styles.suggestionImage}
+                            resizeMode="contain"
+                          />
+                        </View>
+                        <Text style={styles.suggestionName} numberOfLines={2}>
+                          {item.name}
+                        </Text>
+                        <Text style={styles.suggestionPrice}>
+                          PHP{" "}
+                          {Number(
+                            suggestedHasDiscount
+                              ? suggestedSalePrice
+                              : suggestedBasePrice,
+                          ).toFixed(2)}
+                        </Text>
+                        {suggestedHasDiscount ? (
+                          <View style={styles.suggestionDiscountRow}>
+                            <Text style={styles.suggestionPriceOriginal}>
+                              PHP {suggestedBasePrice.toFixed(2)}
+                            </Text>
+                            <Text style={styles.suggestionDiscountText}>
+                              -{suggestedDiscountPercent}%
+                            </Text>
+                          </View>
+                        ) : null}
+                      </TouchableOpacity>
+                    );
+                  })(),
+                )}
               </ScrollView>
             )}
           </>
@@ -351,7 +409,28 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: "700",
     color: "#000",
+    marginBottom: 4,
+  },
+  priceWrap: {
     marginBottom: 12,
+  },
+  productPriceOriginal: {
+    fontSize: 14,
+    color: "#888",
+    textDecorationLine: "line-through",
+    marginBottom: 6,
+  },
+  discountTag: {
+    alignSelf: "flex-start",
+    backgroundColor: "#d11a2a",
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  discountTagText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#fff",
   },
   metaRow: {
     flexDirection: "row",
@@ -484,7 +563,24 @@ const styles = StyleSheet.create({
     color: "#111",
     fontWeight: "600",
     paddingHorizontal: 2,
+    marginBottom: 2,
+  },
+  suggestionDiscountRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 2,
     marginBottom: 4,
+  },
+  suggestionPriceOriginal: {
+    fontSize: 11,
+    color: "#888",
+    textDecorationLine: "line-through",
+  },
+  suggestionDiscountText: {
+    fontSize: 11,
+    color: "#d11a2a",
+    fontWeight: "700",
   },
   modalBackdrop: {
     flex: 1,

@@ -18,6 +18,7 @@ export default function LoginScreen() {
     navigation,
     handleLoginInput,
     loginSubmit,
+    googleSignInHandler,
   } = AuthHooks();
 
   return (
@@ -63,18 +64,26 @@ export default function LoginScreen() {
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.secondaryButton}>
-          <Text style={styles.secondaryText}>Continue with Google</Text>
+        <TouchableOpacity
+          style={styles.secondaryButton}
+          onPress={googleSignInHandler}
+          disabled={loading}
+        >
+          <Text style={styles.secondaryText}>
+            {loading ? "Signing In..." : "Continue with Google"}
+          </Text>
         </TouchableOpacity>
+
+        {formError?.general && (
+          <Text style={styles.formError}>{formError.general}</Text>
+        )}
 
         <Text style={styles.registerText}>
           Don't have an account?{" "}
           <Text
             style={styles.registerLink}
             onPress={() =>
-              navigation.navigate("auth", {
-                screen: "Register",
-              })
+              navigation.navigate("Register")
             }
           >
             Sign up

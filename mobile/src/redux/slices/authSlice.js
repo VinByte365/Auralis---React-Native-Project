@@ -1,5 +1,11 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { hydrateSession, login, logout, register } from "../thunks/authThunk";
+import {
+  hydrateSession,
+  login,
+  logout,
+  register,
+  googleSignIn,
+} from "../thunks/authThunk";
 
 function handlePending(state) {
   state.loading = true;
@@ -7,7 +13,16 @@ function handlePending(state) {
 }
 
 function handleFulfilled(state, action) {
-  const nextUser = action.payload?.user || {};
+  const payloadUser = action.payload?.user;
+  const hasTopLevelIdentity = Boolean(
+    action.payload?._id || action.payload?.userId || action.payload?.id,
+  );
+  const nextUser =
+    payloadUser && typeof payloadUser === "object"
+      ? payloadUser
+      : hasTopLevelIdentity
+        ? action.payload
+        : {};
   const hasIdentity = Boolean(nextUser?._id || nextUser?.userId);
 
   state.isLoggedIn = true;
@@ -57,6 +72,10 @@ const authSlice = createSlice({
       .addCase(register.pending, handlePending)
       .addCase(register.fulfilled, handleFulfilled)
       .addCase(register.rejected, handleRejected)
+
+      .addCase(googleSignIn.pending, handlePending)
+      .addCase(googleSignIn.fulfilled, handleFulfilled)
+      .addCase(googleSignIn.rejected, handleRejected)
 
       .addCase(hydrateSession.pending, (state) => {
         state.loading = true;

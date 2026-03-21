@@ -11,49 +11,68 @@ import React from "react";
 const productImagePlaceholder = require("../../assets/home/3.png");
 
 export default function ProductCard({ products, handleClick }) {
-  const renderProduct = ({ item }) => (
-    <TouchableOpacity
-      style={styles.productCard}
-      onPress={() => handleClick?.(item._id)}
-    >
-      <View style={styles.productImage}>
-        {item.images?.[0]?.url ? (
-          <Image
-            source={{ uri: item.images[0].url }}
-            style={styles.productImageAsset}
-            resizeMode="cover"
-          />
-        ) : (
-          <Image
-            source={productImagePlaceholder}
-            style={styles.productImageAsset}
-            resizeMode="contain"
-          />
-        )}
-      </View>
-      <View style={styles.productInfo}>
-        <Text style={styles.productName} numberOfLines={2}>
-          {item.name}
-        </Text>
-        <View style={styles.productMeta}>
-          <Text style={styles.productPrice}>
-            PHP{" "}
-            {Number(
-              item.saleActive && item.salePrice
-                ? item.salePrice
-                : item.price || 0,
-            ).toFixed(2)}
-          </Text>
-          <View style={styles.ratingContainer}>
-            <Text style={styles.ratingText}>{item.unit || "pc"}</Text>
-          </View>
+  const renderProduct = ({ item }) => {
+    const basePrice = Number(item?.price || 0);
+    const salePrice = Number(item?.salePrice || 0);
+    const hasDiscount =
+      Boolean(item?.saleActive) && salePrice > 0 && salePrice < basePrice;
+    const displayPrice = hasDiscount ? salePrice : basePrice;
+    const discountPercent =
+      hasDiscount && basePrice > 0
+        ? Math.round(((basePrice - salePrice) / basePrice) * 100)
+        : 0;
+
+    return (
+      <TouchableOpacity
+        style={styles.productCard}
+        onPress={() => handleClick?.(item._id)}
+      >
+        <View style={styles.productImage}>
+          {item.images?.[0]?.url ? (
+            <Image
+              source={{ uri: item.images[0].url }}
+              style={styles.productImageAsset}
+              resizeMode="cover"
+            />
+          ) : (
+            <Image
+              source={productImagePlaceholder}
+              style={styles.productImageAsset}
+              resizeMode="contain"
+            />
+          )}
+          {hasDiscount ? (
+            <View style={styles.discountBadge}>
+              <Text style={styles.discountBadgeText}>-{discountPercent}%</Text>
+            </View>
+          ) : null}
         </View>
-        <Text style={styles.soldText}>
-          {item.category?.categoryName || "Uncategorized"}
-        </Text>
-      </View>
-    </TouchableOpacity>
-  );
+        <View style={styles.productInfo}>
+          <Text style={styles.productName} numberOfLines={2}>
+            {item.name}
+          </Text>
+          <View style={styles.productMeta}>
+            <View>
+              <Text style={styles.productPrice}>
+                PHP {displayPrice.toFixed(2)}
+              </Text>
+              {hasDiscount ? (
+                <Text style={styles.productPriceOriginal}>
+                  PHP {basePrice.toFixed(2)}
+                </Text>
+              ) : null}
+            </View>
+            <View style={styles.ratingContainer}>
+              <Text style={styles.ratingText}>{item.unit || "pc"}</Text>
+            </View>
+          </View>
+          <Text style={styles.soldText}>
+            {item.category?.categoryName || "Uncategorized"}
+          </Text>
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <FlatList
@@ -118,6 +137,26 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: "#000",
+  },
+  productPriceOriginal: {
+    fontSize: 11,
+    color: "#999",
+    textDecorationLine: "line-through",
+    marginTop: 2,
+  },
+  discountBadge: {
+    position: "absolute",
+    top: 8,
+    left: 8,
+    backgroundColor: "#d11a2a",
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  discountBadgeText: {
+    color: "#fff",
+    fontSize: 11,
+    fontWeight: "700",
   },
   ratingContainer: {
     flexDirection: "row",

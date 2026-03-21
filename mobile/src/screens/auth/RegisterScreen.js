@@ -17,6 +17,7 @@ export default function RegisterScreen() {
     handleRegisterInput,
     registerSubmit,
     navigation,
+    googleSignInHandler,
   } = AuthHooks();
 
   return (
@@ -34,7 +35,9 @@ export default function RegisterScreen() {
             placeholder="John Doe"
             placeholderTextColor="#888"
           />
-          {formError?.name && <Text style={styles.error}>{formError.name}</Text>}
+          {formError?.name && (
+            <Text style={styles.error}>{formError.name}</Text>
+          )}
         </View>
 
         <View style={styles.inputGroup}>
@@ -74,18 +77,26 @@ export default function RegisterScreen() {
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.secondaryButton}>
-          <Text style={styles.secondaryText}>Continue with Google</Text>
+        <TouchableOpacity
+          style={styles.secondaryButton}
+          onPress={googleSignInHandler}
+          disabled={loading}
+        >
+          <Text style={styles.secondaryText}>
+            {loading ? "Signing In..." : "Continue with Google"}
+          </Text>
         </TouchableOpacity>
+
+        {formError?.general && (
+          <Text style={styles.error}>{formError.general}</Text>
+        )}
 
         <Text style={styles.signInText}>
           Already have an account?{" "}
           <Text
             style={styles.signInLink}
             onPress={() =>
-              navigation.navigate("auth", {
-                screen: "Login",
-              })
+              navigation.navigate("Login")
             }
           >
             Sign in
