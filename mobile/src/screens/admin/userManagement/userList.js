@@ -72,7 +72,14 @@ export default function UserList() {
 
   const filtered = useMemo(() => {
     const query = search.toLowerCase();
-    return list.filter((user) => {
+    const unique = [];
+    const seenIds = new Set();
+
+    list.forEach((user) => {
+      const idKey = String(user?._id || user?.id || "");
+      if (idKey && seenIds.has(idKey)) return;
+      if (idKey) seenIds.add(idKey);
+
       const roleLabel = toLabel(user?.role);
       const matchSearch =
         String(user?.name || "")
@@ -82,8 +89,10 @@ export default function UserList() {
           .toLowerCase()
           .includes(query);
       const matchFilter = activeFilter === "All" || roleLabel === activeFilter;
-      return matchSearch && matchFilter;
+      if (matchSearch && matchFilter) unique.push(user);
     });
+
+    return unique;
   }, [activeFilter, list, search]);
 
   const resetForm = () => {
@@ -256,7 +265,9 @@ export default function UserList() {
           data={filtered}
           renderItem={renderItem}
           estimatedItemSize={150}
-          keyExtractor={(item) => String(item?._id)}
+          keyExtractor={(item, index) =>
+            `${String(item?._id || item?.id || "unknown")}-${index}`
+          }
           contentContainerStyle={{ padding: SPACING.lg }}
           ItemSeparatorComponent={() => <View style={{ height: SPACING.md }} />}
         />

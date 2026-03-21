@@ -1,8 +1,20 @@
 import React, { useMemo, useState } from "react";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useDispatch, useSelector } from "react-redux";
-import { COLORS, FONT, RADIUS, SHADOW, SPACING } from "../../../constants/adminTheme";
+import {
+  COLORS,
+  FONT,
+  RADIUS,
+  SHADOW,
+  SPACING,
+} from "../../../constants/adminTheme";
 import { updateAdminOrder } from "../../../redux/thunks/adminThunks";
 import AppHeader from "../components/AppHeader";
 import ConfirmDialog from "../components/ConfirmDialog";
@@ -52,7 +64,10 @@ export default function OrderDetails() {
     return (
       <View style={styles.root}>
         <AppHeader title="Order Details" onBack={() => navigation.goBack()} />
-        <EmptyState title="Order not available" description="Return to the order list and select another order." />
+        <EmptyState
+          title="Order not available"
+          description="Return to the order list and select another order."
+        />
       </View>
     );
   }
@@ -75,6 +90,13 @@ export default function OrderDetails() {
   const customerName = order?.user?.name || "Guest";
   const customerEmail = order?.user?.email || "No email";
   const items = Array.isArray(order?.items) ? order.items : [];
+  const isCancelDisabled =
+    String(order?.status || "").toUpperCase() === "COMPLETED";
+
+  const onCancelPress = () => {
+    if (isCancelDisabled) return;
+    handleAction("cancel");
+  };
 
   return (
     <View style={styles.root}>
@@ -99,8 +121,14 @@ export default function OrderDetails() {
               <Text style={styles.customerEmail}>{customerEmail}</Text>
             </View>
           </View>
-          <InfoRow label="Delivery Address" value={order.deliveryAddress || "N/A"} />
-          <InfoRow label="Payment Method" value={String(order.paymentMethod || "cod").toUpperCase()} />
+          <InfoRow
+            label="Delivery Address"
+            value={order.deliveryAddress || "N/A"}
+          />
+          <InfoRow
+            label="Payment Method"
+            value={String(order.paymentMethod || "cod").toUpperCase()}
+          />
         </View>
 
         <SectionHeader title="Order Items" />
@@ -108,7 +136,10 @@ export default function OrderDetails() {
           {items.map((item, index) => (
             <View
               key={`${item?.product || index}`}
-              style={[styles.itemRow, index === items.length - 1 && { borderBottomWidth: 0 }]}
+              style={[
+                styles.itemRow,
+                index === items.length - 1 && { borderBottomWidth: 0 },
+              ]}
             >
               <View style={styles.itemIcon}>
                 <Text style={styles.itemIconText}>PR</Text>
@@ -119,7 +150,9 @@ export default function OrderDetails() {
                   {(item?.sku || "N/A") + ` | Qty: ${item?.quantity || 0}`}
                 </Text>
               </View>
-              <Text style={styles.itemPrice}>{formatCurrency(item?.itemTotal)}</Text>
+              <Text style={styles.itemPrice}>
+                {formatCurrency(item?.itemTotal)}
+              </Text>
             </View>
           ))}
         </View>
@@ -127,15 +160,27 @@ export default function OrderDetails() {
         <SectionHeader title="Payment Details" />
         <View style={styles.card}>
           <InfoRow label="Subtotal" value={formatCurrency(order.baseAmount)} />
-          <InfoRow label="Final Amount" value={formatCurrency(order.finalAmountPaid)} />
+          <InfoRow
+            label="Final Amount"
+            value={formatCurrency(order.finalAmountPaid)}
+          />
           <View style={styles.totalRow}>
             <Text style={styles.totalLabel}>Order Total</Text>
-            <Text style={styles.totalValue}>{formatCurrency(order.finalAmountPaid)}</Text>
+            <Text style={styles.totalValue}>
+              {formatCurrency(order.finalAmountPaid)}
+            </Text>
           </View>
         </View>
 
         <View style={styles.actionsRow}>
-          <TouchableOpacity style={styles.secondaryBtn} onPress={() => handleAction("cancel")}>
+          <TouchableOpacity
+            style={[
+              styles.secondaryBtn,
+              isCancelDisabled && styles.disabledBtn,
+            ]}
+            onPress={onCancelPress}
+            disabled={isCancelDisabled}
+          >
             <Text style={styles.secondaryBtnText}>Cancel Order</Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -204,7 +249,11 @@ const styles = StyleSheet.create({
     marginRight: SPACING.md,
   },
   avatarText: { fontSize: 18, fontWeight: FONT.bold, color: COLORS.primary },
-  customerName: { fontSize: 16, fontWeight: FONT.semibold, color: COLORS.textPrimary },
+  customerName: {
+    fontSize: 16,
+    fontWeight: FONT.semibold,
+    color: COLORS.textPrimary,
+  },
   customerEmail: { fontSize: 12, color: COLORS.textMuted, marginTop: 2 },
   itemRow: {
     flexDirection: "row",
@@ -222,9 +271,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginRight: SPACING.md,
   },
-  itemIconText: { fontSize: 11, color: COLORS.textSecondary, fontWeight: FONT.semibold },
+  itemIconText: {
+    fontSize: 11,
+    color: COLORS.textSecondary,
+    fontWeight: FONT.semibold,
+  },
   itemInfo: { flex: 1 },
-  itemName: { fontSize: 14, fontWeight: FONT.semibold, color: COLORS.textPrimary },
+  itemName: {
+    fontSize: 14,
+    fontWeight: FONT.semibold,
+    color: COLORS.textPrimary,
+  },
   itemSku: { fontSize: 11, color: COLORS.textMuted, marginTop: 2 },
   itemPrice: { fontSize: 14, fontWeight: FONT.bold, color: COLORS.textPrimary },
   totalRow: {
@@ -235,7 +292,11 @@ const styles = StyleSheet.create({
     borderTopWidth: 2,
     borderTopColor: COLORS.textPrimary,
   },
-  totalLabel: { fontSize: 16, fontWeight: FONT.bold, color: COLORS.textPrimary },
+  totalLabel: {
+    fontSize: 16,
+    fontWeight: FONT.bold,
+    color: COLORS.textPrimary,
+  },
   totalValue: { fontSize: 18, fontWeight: FONT.bold, color: COLORS.primary },
   actionsRow: {
     flexDirection: "row",
@@ -251,7 +312,11 @@ const styles = StyleSheet.create({
     borderColor: COLORS.danger,
     alignItems: "center",
   },
-  secondaryBtnText: { fontSize: 14, fontWeight: FONT.semibold, color: COLORS.danger },
+  secondaryBtnText: {
+    fontSize: 14,
+    fontWeight: FONT.semibold,
+    color: COLORS.danger,
+  },
   primaryBtn: {
     flex: 1,
     paddingVertical: SPACING.md,
@@ -262,5 +327,9 @@ const styles = StyleSheet.create({
   disabledBtn: {
     opacity: 0.6,
   },
-  primaryBtnText: { fontSize: 14, fontWeight: FONT.semibold, color: COLORS.textInverse },
+  primaryBtnText: {
+    fontSize: 14,
+    fontWeight: FONT.semibold,
+    color: COLORS.textInverse,
+  },
 });

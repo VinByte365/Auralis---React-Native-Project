@@ -1,5 +1,6 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import {
+  createAdminProduct,
   createAdminUser,
   createAdminCategories,
   deleteAdminCategory,
@@ -24,6 +25,7 @@ import {
   updateAdminCategory,
   updateAdminOrderStatus,
   updateAdminProductStock,
+  updateAdminProduct,
   updateAdminUser,
   updateAdminUserRole,
 } from "../../services/adminService";
@@ -241,6 +243,32 @@ export const getAdminProductsData = createAsyncThunk(
     } catch (error) {
       return rejectWithValue({
         error: getErrorMessage(error, "Failed to fetch products"),
+      });
+    }
+  },
+);
+
+export const createProduct = createAsyncThunk(
+  "admin/createProduct",
+  async ({ payload = {}, images = [] }, { rejectWithValue }) => {
+    try {
+      return await createAdminProduct(payload, images);
+    } catch (error) {
+      return rejectWithValue({
+        error: getErrorMessage(error, "Failed to create product"),
+      });
+    }
+  },
+);
+
+export const editProduct = createAsyncThunk(
+  "admin/editProduct",
+  async ({ productId, payload = {}, images = [] }, { rejectWithValue }) => {
+    try {
+      return await updateAdminProduct(productId, payload, images);
+    } catch (error) {
+      return rejectWithValue({
+        error: getErrorMessage(error, "Failed to update product"),
       });
     }
   },

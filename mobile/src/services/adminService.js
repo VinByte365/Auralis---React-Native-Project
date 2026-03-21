@@ -12,6 +12,40 @@ function toQueryParams(params = {}) {
   return query;
 }
 
+function buildProductFormData(payload = {}, images = []) {
+  const formData = new FormData();
+
+  Object.entries(payload).forEach(([key, value]) => {
+    if (value === undefined || value === null || value === "") return;
+    formData.append(key, String(value));
+  });
+
+  images.forEach((image, index) => {
+    const uri = image?.uri;
+    if (!uri) return;
+
+    const mimeTypeRaw = image?.mimeType || image?.type;
+    const mimeType =
+      typeof mimeTypeRaw === "string" && mimeTypeRaw.includes("/")
+        ? mimeTypeRaw
+        : "image/jpeg";
+
+    const extension = mimeType.split("/")[1] || "jpg";
+    const fileName =
+      image?.fileName ||
+      image?.name ||
+      `product-image-${Date.now()}-${index}.${extension}`;
+
+    formData.append("images", {
+      uri,
+      name: fileName,
+      type: mimeType,
+    });
+  });
+
+  return formData;
+}
+
 export const fetchAdminDashboardSummary = async () => {
   const response = await axiosInstance.get("/api/v1/admin/dashboard/summary");
   return unwrapResult(response);
@@ -155,6 +189,28 @@ export const fetchAdminProducts = async (params = {}) => {
   const response = await axiosInstance.get("/api/v1/product", {
     params: toQueryParams(params),
   });
+  return unwrapResult(response);
+};
+
+export const createAdminProduct = async (payload = {}, images = []) => {
+  const response = await axiosInstance.post(
+    "/api/v1/product",
+    buildProductFormData(payload, images),
+  );
+
+  return unwrapResult(response);
+};
+
+export const updateAdminProduct = async (
+  productId,
+  payload = {},
+  images = [],
+) => {
+  const response = await axiosInstance.put(
+    `/api/v1/product/${productId}`,
+    buildProductFormData(payload, images),
+  );
+
   return unwrapResult(response);
 };
 

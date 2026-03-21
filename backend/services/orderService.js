@@ -194,6 +194,7 @@ exports.updateOrderStatus = async (request = {}) => {
   const { orderId } = request.params || {};
   const { status } = request.body || {};
 
+  if (!orderId) throw new Error("orderId is required");
   if (!status) throw new Error("status is required");
 
   const order = await Order.findByIdAndUpdate(
@@ -205,17 +206,18 @@ exports.updateOrderStatus = async (request = {}) => {
       new: true,
       runValidators: true,
     },
-  );
-
-   await getPushTokenAndTrigger(
-      order.user,
-      `Your order ${order._id} is now ${status}`,
-      {
-        screen: "Order",
-        params: { orderId: String(createdOrder._id) },
-      },
-    );
+  ).populate("user", "name email");
 
   if (!order) throw new Error("order not found");
+
+  await getPushTokenAndTrigger(
+    order.user?._id || order.user,
+    `Your order ${order._id} is now ${status}`,
+    {
+      screen: "Order",
+      params: { orderId: String(order._id) },
+    },
+  );
+
   return order;
 };

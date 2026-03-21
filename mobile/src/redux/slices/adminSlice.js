@@ -3,8 +3,10 @@ import {
   archiveProduct,
   changeProductStock,
   changeUserRole,
+  createProduct,
   createUser,
   createCategories,
+  editProduct,
   editUser,
   editCategory,
   getAdminAnalyticsOverview,
@@ -78,6 +80,17 @@ const setError = (target, action, fallback) => {
   target.error = action.payload?.error || fallback;
 };
 
+const dedupeById = (items = []) => {
+  const seen = new Set();
+  return items.filter((item) => {
+    const key = String(item?._id || item?.id || "");
+    if (!key) return true;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+};
+
 const adminSlice = createSlice({
   name: "admin",
   initialState,
@@ -122,7 +135,7 @@ const adminSlice = createSlice({
           analytics: action.payload?.analytics || null,
           inventory: action.payload?.inventory || null,
         };
-        state.products.list = action.payload?.products || [];
+        state.products.list = dedupeById(action.payload?.products || []);
       })
       .addCase(getAdminProductAnalyticsData.rejected, (state, action) => {
         state.analytics.loading = false;
@@ -137,7 +150,7 @@ const adminSlice = createSlice({
         state.analytics.loading = false;
         state.analytics.user = action.payload?.analytics || null;
         state.analytics.customerInsights = action.payload?.insights || [];
-        state.users.list = action.payload?.users || [];
+        state.users.list = dedupeById(action.payload?.users || []);
       })
       .addCase(getAdminUserAnalyticsData.rejected, (state, action) => {
         state.analytics.loading = false;
@@ -199,7 +212,7 @@ const adminSlice = createSlice({
       })
       .addCase(getAdminCategories.fulfilled, (state, action) => {
         state.categories.loading = false;
-        state.categories.list = action.payload || [];
+        state.categories.list = dedupeById(action.payload || []);
       })
       .addCase(getAdminCategories.rejected, (state, action) => {
         state.categories.loading = false;
@@ -215,7 +228,10 @@ const adminSlice = createSlice({
         const created = Array.isArray(action.payload)
           ? action.payload
           : [action.payload];
-        state.categories.list = [...created, ...state.categories.list];
+        state.categories.list = dedupeById([
+          ...created,
+          ...state.categories.list,
+        ]);
       })
       .addCase(createCategories.rejected, (state, action) => {
         state.categories.saving = false;
@@ -256,11 +272,40 @@ const adminSlice = createSlice({
       })
       .addCase(getAdminProductsData.fulfilled, (state, action) => {
         state.products.loading = false;
-        state.products.list = action.payload || [];
+        state.products.list = dedupeById(action.payload || []);
       })
       .addCase(getAdminProductsData.rejected, (state, action) => {
         state.products.loading = false;
         setError(state.products, action, "Failed to fetch products");
+      })
+
+      .addCase(createProduct.pending, (state) => {
+        state.products.updating = true;
+      })
+      .addCase(createProduct.fulfilled, (state, action) => {
+        state.products.updating = false;
+        state.products.list = dedupeById([
+          action.payload,
+          ...state.products.list,
+        ]);
+      })
+      .addCase(createProduct.rejected, (state, action) => {
+        state.products.updating = false;
+        setError(state.products, action, "Failed to create product");
+      })
+
+      .addCase(editProduct.pending, (state) => {
+        state.products.updating = true;
+      })
+      .addCase(editProduct.fulfilled, (state, action) => {
+        state.products.updating = false;
+        state.products.list = state.products.list.map((product) =>
+          product?._id === action.payload?._id ? action.payload : product,
+        );
+      })
+      .addCase(editProduct.rejected, (state, action) => {
+        state.products.updating = false;
+        setError(state.products, action, "Failed to update product");
       })
 
       .addCase(archiveProduct.pending, (state) => {
@@ -328,7 +373,7 @@ const adminSlice = createSlice({
       })
       .addCase(getAdminUsersData.fulfilled, (state, action) => {
         state.users.loading = false;
-        state.users.list = action.payload || [];
+        state.users.list = dedupeById(action.payload || []);
       })
       .addCase(getAdminUsersData.rejected, (state, action) => {
         state.users.loading = false;
@@ -340,7 +385,7 @@ const adminSlice = createSlice({
       })
       .addCase(createUser.fulfilled, (state, action) => {
         state.users.updating = false;
-        state.users.list = [action.payload, ...state.users.list];
+        state.users.list = dedupeById([action.payload, ...state.users.list]);
       })
       .addCase(createUser.rejected, (state, action) => {
         state.users.updating = false;
