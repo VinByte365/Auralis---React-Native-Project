@@ -2,7 +2,62 @@ const Product = require("../models/productModel");
 const Review = require("../models/reviewModel");
 const { uploadImage, deleteAssets } = require("../utils/cloundinaryUtil");
 const { createLog } = require("./activityLogsService");
+const { sendPromotionNotificationToUsers } = require("./notificationService");
 const slugify = require("slugify");
+
+async function notifyPromotionForProduct(product, type = "promotion") {
+  if (!product) return;
+
+  const originalPrice = Number(product.price || 0);
+  const discountedPrice = Number(product.salePrice || 0);
+  const hasDiscount =
+    Boolean(product.saleActive) &&
+    Number.isFinite(discountedPrice) &&
+    discountedPrice > 0 &&
+    discountedPrice < originalPrice;
+
+  if (!hasDiscount) return;
+
+  const discountPercent =
+    originalPrice > 0
+      ? Math.round(((originalPrice - discountedPrice) / originalPrice) * 100)
+      : 0;
+
+  const title =
+    type === "new_discount" ? "New Product Discount" : "Discount Updated";
+  const body = `${product.name} is now ${discountPercent}% off. Tap to view details.`;
+
+  try {
+    const result = await sendPromotionNotificationToUsers({
+      title,
+      body,
+      data: {
+        screen: "NotificationDetails",
+        params: {
+          type: "promotion",
+          title,
+          message: body,
+          productId: String(product._id),
+          productName: product.name,
+          oldPrice: String(originalPrice),
+          newPrice: String(discountedPrice),
+          discountPercent: String(discountPercent),
+        },
+      },
+    });
+
+    if (!result?.sent) {
+      console.log(
+        `[Push] Promotion broadcast skipped for ${product._id}: ${result?.reason || "unknown_reason"}`,
+      );
+    }
+  } catch (error) {
+    console.log(
+      `[Push] Promotion broadcast failed for ${product?._id}:`,
+      error?.message || error,
+    );
+  }
+}
 
 const buildProductFilters = (query = {}) => {
   const { q, categoryId, priceGTE, priceLTE } = query;
@@ -65,6 +120,8 @@ const create = async (request) => {
     "SUCCESS",
     `create a new product named '${product.name}'`,
   );
+
+  await notifyPromotionForProduct(product, "new_discount");
   //
   return product;
 };
@@ -191,6 +248,14 @@ const update = async (request = {}) => {
     "SUCCESS",
     `updated the product named '${product.name}'`,
   );
+
+  const isDiscountMutation =
+    Object.prototype.hasOwnProperty.call(request.body || {}, "salePrice") ||
+    Object.prototype.hasOwnProperty.call(request.body || {}, "saleActive");
+
+  if (isDiscountMutation) {
+    await notifyPromotionForProduct(product, "promotion_update");
+  }
 
   return product;
 };

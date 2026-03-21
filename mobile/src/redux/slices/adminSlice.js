@@ -4,6 +4,7 @@ import {
   changeProductStock,
   changeUserRole,
   createProduct,
+  createPromoEntry,
   createUser,
   createCategories,
   editProduct,
@@ -16,13 +17,16 @@ import {
   getAdminOrders,
   getAdminProductAnalyticsData,
   getAdminProductsData,
+  getAdminPromosData,
   getAdminUserAnalyticsData,
   getAdminUsersData,
   permanentlyDeleteProduct,
   removeCategory,
+  removePromoEntry,
   removeUser,
   restoreProduct,
   updateAdminOrder,
+  editPromoEntry,
 } from "../thunks/adminThunks";
 
 const initialState = {
@@ -69,6 +73,12 @@ const initialState = {
     error: "",
   },
   users: {
+    list: [],
+    loading: false,
+    updating: false,
+    error: "",
+  },
+  promos: {
     list: [],
     loading: false,
     updating: false,
@@ -432,6 +442,59 @@ const adminSlice = createSlice({
       .addCase(removeUser.rejected, (state, action) => {
         state.users.updating = false;
         setError(state.users, action, "Failed to delete user");
+      })
+
+      .addCase(getAdminPromosData.pending, (state) => {
+        state.promos.loading = true;
+        state.promos.error = "";
+      })
+      .addCase(getAdminPromosData.fulfilled, (state, action) => {
+        state.promos.loading = false;
+        state.promos.list = dedupeById(action.payload || []);
+      })
+      .addCase(getAdminPromosData.rejected, (state, action) => {
+        state.promos.loading = false;
+        setError(state.promos, action, "Failed to fetch promotions");
+      })
+
+      .addCase(createPromoEntry.pending, (state) => {
+        state.promos.updating = true;
+      })
+      .addCase(createPromoEntry.fulfilled, (state, action) => {
+        state.promos.updating = false;
+        state.promos.list = dedupeById([action.payload, ...state.promos.list]);
+      })
+      .addCase(createPromoEntry.rejected, (state, action) => {
+        state.promos.updating = false;
+        setError(state.promos, action, "Failed to create promotion");
+      })
+
+      .addCase(editPromoEntry.pending, (state) => {
+        state.promos.updating = true;
+      })
+      .addCase(editPromoEntry.fulfilled, (state, action) => {
+        state.promos.updating = false;
+        state.promos.list = state.promos.list.map((promo) =>
+          promo?._id === action.payload?._id ? action.payload : promo,
+        );
+      })
+      .addCase(editPromoEntry.rejected, (state, action) => {
+        state.promos.updating = false;
+        setError(state.promos, action, "Failed to update promotion");
+      })
+
+      .addCase(removePromoEntry.pending, (state) => {
+        state.promos.updating = true;
+      })
+      .addCase(removePromoEntry.fulfilled, (state, action) => {
+        state.promos.updating = false;
+        state.promos.list = state.promos.list.filter(
+          (promo) => promo?._id !== action.payload,
+        );
+      })
+      .addCase(removePromoEntry.rejected, (state, action) => {
+        state.promos.updating = false;
+        setError(state.promos, action, "Failed to delete promotion");
       });
   },
 });

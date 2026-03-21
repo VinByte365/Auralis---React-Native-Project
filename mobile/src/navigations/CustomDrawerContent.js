@@ -33,10 +33,22 @@ const MENU_GROUPS = [
     label: "Analytics",
     icon: "chart-line",
     children: [
-      { key: "analyticsOverview", label: "Overview", screen: "AnalyticsOverview" },
-      { key: "analyticsProduct", label: "Products", screen: "AnalyticsProduct" },
+      {
+        key: "analyticsOverview",
+        label: "Overview",
+        screen: "AnalyticsOverview",
+      },
+      {
+        key: "analyticsProduct",
+        label: "Products",
+        screen: "AnalyticsProduct",
+      },
       { key: "analyticsUser", label: "Users", screen: "AnalyticsUser" },
-      { key: "analyticsOperation", label: "Operations", screen: "AnalyticsOperation" },
+      {
+        key: "analyticsOperation",
+        label: "Operations",
+        screen: "AnalyticsOperation",
+      },
     ],
   },
   {
@@ -63,6 +75,12 @@ const MENU_GROUPS = [
       { key: "inventory", label: "Inventory", screen: "Inventory" },
       { key: "recycleBin", label: "Recycle Bin", screen: "RecycleBin" },
     ],
+  },
+  {
+    key: "promotions",
+    label: "Promotions",
+    icon: "ticket-percent-outline",
+    screen: "PromoList",
   },
   {
     key: "users",
@@ -127,7 +145,8 @@ export default function CustomDrawerContent(props) {
         showsVerticalScrollIndicator={false}
       >
         {MENU_GROUPS.map((group) => {
-          const hasChildren = Array.isArray(group.children) && group.children.length > 0;
+          const hasChildren =
+            Array.isArray(group.children) && group.children.length > 0;
           const isExpanded = computedExpanded[group.key];
           const isActive =
             (!hasChildren && activeRouteName === group.screen) ||
@@ -137,16 +156,24 @@ export default function CustomDrawerContent(props) {
             <View key={group.key}>
               <TouchableOpacity
                 style={[styles.menuItem, isActive && styles.menuItemActive]}
-                onPress={() => (hasChildren ? toggleGroup(group.key) : navigateTo(group.screen))}
+                onPress={() =>
+                  hasChildren
+                    ? toggleGroup(group.key)
+                    : navigateTo(group.screen)
+                }
                 activeOpacity={0.8}
               >
                 <MaterialCommunityIcons
                   name={group.icon}
                   size={18}
-                  color={isActive ? COLORS.sidebarIconActive : COLORS.sidebarIcon}
+                  color={
+                    isActive ? COLORS.sidebarIconActive : COLORS.sidebarIcon
+                  }
                   style={styles.menuIcon}
                 />
-                <Text style={[styles.menuLabel, isActive && styles.menuLabelActive]}>
+                <Text
+                  style={[styles.menuLabel, isActive && styles.menuLabelActive]}
+                >
                   {group.label}
                 </Text>
                 {hasChildren && (
@@ -165,11 +192,19 @@ export default function CustomDrawerContent(props) {
                     return (
                       <TouchableOpacity
                         key={child.key}
-                        style={[styles.subMenuItem, isChildActive && styles.subMenuItemActive]}
+                        style={[
+                          styles.subMenuItem,
+                          isChildActive && styles.subMenuItemActive,
+                        ]}
                         onPress={() => navigateTo(child.screen)}
                         activeOpacity={0.8}
                       >
-                        <View style={[styles.subDot, isChildActive && styles.subDotActive]} />
+                        <View
+                          style={[
+                            styles.subDot,
+                            isChildActive && styles.subDotActive,
+                          ]}
+                        />
                         <Text
                           style={[
                             styles.subMenuLabel,

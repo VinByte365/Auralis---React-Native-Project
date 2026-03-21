@@ -1,9 +1,11 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import {
+  createAdminPromo,
   createAdminProduct,
   createAdminUser,
   createAdminCategories,
   deleteAdminCategory,
+  deleteAdminPromo,
   deleteAdminUser,
   fetchAdminActivityLogs,
   fetchAdminCategories,
@@ -12,6 +14,7 @@ import {
   fetchAdminInventoryAnalytics,
   fetchAdminOrderAnalytics,
   fetchAdminOrders,
+  fetchAdminPromos,
   fetchAdminPredictiveAnalytics,
   fetchAdminProductAnalytics,
   fetchAdminProducts,
@@ -26,6 +29,7 @@ import {
   updateAdminOrderStatus,
   updateAdminProductStock,
   updateAdminProduct,
+  updateAdminPromo,
   updateAdminUser,
   updateAdminUserRole,
 } from "../../services/adminService";
@@ -389,6 +393,59 @@ export const removeUser = createAsyncThunk(
     } catch (error) {
       return rejectWithValue({
         error: getErrorMessage(error, "Failed to delete user"),
+      });
+    }
+  },
+);
+
+export const getAdminPromosData = createAsyncThunk(
+  "admin/getPromosData",
+  async (params = {}, { rejectWithValue }) => {
+    try {
+      return await fetchAdminPromos(params);
+    } catch (error) {
+      return rejectWithValue({
+        error: getErrorMessage(error, "Failed to fetch promotions"),
+      });
+    }
+  },
+);
+
+export const createPromoEntry = createAsyncThunk(
+  "admin/createPromoEntry",
+  async (payload = {}, { rejectWithValue }) => {
+    try {
+      return await createAdminPromo(payload);
+    } catch (error) {
+      return rejectWithValue({
+        error: getErrorMessage(error, "Failed to create promotion"),
+      });
+    }
+  },
+);
+
+export const editPromoEntry = createAsyncThunk(
+  "admin/editPromoEntry",
+  async ({ promoId, payload = {} }, { rejectWithValue }) => {
+    try {
+      return await updateAdminPromo(promoId, payload);
+    } catch (error) {
+      return rejectWithValue({
+        error: getErrorMessage(error, "Failed to update promotion"),
+      });
+    }
+  },
+);
+
+export const removePromoEntry = createAsyncThunk(
+  "admin/removePromoEntry",
+  async (promoId, { rejectWithValue }) => {
+    try {
+      await deleteAdminPromo(promoId);
+      return promoId;
+    } catch (error) {
+      return rejectWithValue({
+        error: getErrorMessage(error, "Failed to delete promotion"),
       });
     }
   },

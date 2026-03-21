@@ -1,4 +1,5 @@
 const { Expo } = require("expo-server-sdk");
+const User = require("../models/userModel");
 const expo = new Expo();
 
 async function sendPushToUser(pushToken, title = "Auralis", body, data = {}) {
@@ -35,6 +36,60 @@ async function sendPushToUser(pushToken, title = "Auralis", body, data = {}) {
   };
 }
 
+function extractPushToken(user) {
+  if (!user) return "";
+  if (typeof user.pushToken === "string") return user.pushToken;
+  if (typeof user?.pushToken?.token === "string") return user.pushToken.token;
+  return "";
+}
+
+async function sendPromotionNotificationToUsers({
+  title = "Auralis Promotion",
+  body = "A new discount is available.",
+  data = {},
+  userFilter = {},
+} = {}) {
+  const users = await User.find({
+    role: { $ne: "admin" },
+    ...userFilter,
+  }).select("pushToken");
+
+  const validTokens = users
+    .map((user) => String(extractPushToken(user) || "").trim())
+    .filter((token) => Expo.isExpoPushToken(token));
+
+  if (validTokens.length === 0) {
+    return {
+      sent: false,
+      reason: "no_valid_push_tokens",
+      attemptedUsers: users.length,
+    };
+  }
+
+  const messages = validTokens.map((token) => ({
+    to: token,
+    sound: "default",
+    title,
+    body,
+    data,
+  }));
+
+  const chunks = expo.chunkPushNotifications(messages);
+  const tickets = [];
+  for (const chunk of chunks) {
+    const chunkTickets = await expo.sendPushNotificationsAsync(chunk);
+    tickets.push(...chunkTickets);
+  }
+
+  return {
+    sent: true,
+    attemptedUsers: users.length,
+    successfulTokens: validTokens.length,
+    tickets,
+  };
+}
+
 module.exports = {
   sendPushToUser,
+  sendPromotionNotificationToUsers,
 };

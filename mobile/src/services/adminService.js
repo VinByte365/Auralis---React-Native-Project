@@ -240,3 +240,26 @@ export const updateAdminProductStock = async (productId, stockQuantity) => {
   );
   return unwrapResult(response);
 };
+
+export const fetchAdminPromos = async (params = {}) => {
+  const response = await axiosInstance.get("/api/v1/promo", {
+    params: toQueryParams(params),
+  });
+
+  return unwrapResult(response);
+};
+
+export const createAdminPromo = async (payload = {}) => {
+  const response = await axiosInstance.post("/api/v1/promo", payload);
+  return unwrapResult(response);
+};
+
+export const updateAdminPromo = async (promoId, payload = {}) => {
+  const response = await axiosInstance.put(`/api/v1/promo/${promoId}`, payload);
+  return unwrapResult(response);
+};
+
+export const deleteAdminPromo = async (promoId) => {
+  const response = await axiosInstance.delete(`/api/v1/promo/${promoId}`);
+  return unwrapResult(response);
+};

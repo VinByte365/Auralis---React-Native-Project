@@ -12,6 +12,7 @@ import UserHomeStackNavigation from "./UserHomeStackNavigation";
 import OrderScreen from "../screens/user/OrderScreen";
 import ProfileScreen from "../screens/user/ProfileScreen";
 import MoreScreen from "../screens/user/MoreScreen";
+import NotificationDetailsScreen from "../screens/user/NotificationDetailsScreen";
 
 const Drawer = createDrawerNavigator();
 
@@ -92,6 +93,14 @@ export default function UserStackNavigation() {
               color={color}
             />
           ),
+        }}
+      />
+      <Drawer.Screen
+        name="NotificationDetails"
+        component={NotificationDetailsScreen}
+        options={{
+          title: "Notification Details",
+          drawerItemStyle: { display: "none" },
         }}
       />
     </Drawer.Navigator>
