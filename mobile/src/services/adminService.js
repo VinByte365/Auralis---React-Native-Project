@@ -78,9 +78,12 @@ export const fetchAdminCustomerInsights = async (params = {}) => {
 };
 
 export const fetchAdminPredictiveAnalytics = async (params = {}) => {
-  const response = await axiosInstance.get("/api/v1/admin/analytics/predictive", {
-    params: toQueryParams(params),
-  });
+  const response = await axiosInstance.get(
+    "/api/v1/admin/analytics/predictive",
+    {
+      params: toQueryParams(params),
+    },
+  );
   return unwrapResult(response);
 };
 
@@ -103,8 +106,21 @@ export const fetchAdminUsers = async () => {
   return unwrapResult(response);
 };
 
+export const createAdminUser = async (payload = {}) => {
+  const response = await axiosInstance.post("/api/v1/user", payload);
+  return unwrapResult(response);
+};
+
+export const updateAdminUser = async (userId, payload = {}) => {
+  const response = await axiosInstance.put(`/api/v1/user/${userId}`, payload);
+  return unwrapResult(response);
+};
+
 export const updateAdminUserRole = async (userId, payload = {}) => {
-  const response = await axiosInstance.put(`/api/v1/user/roles/${userId}`, payload);
+  const response = await axiosInstance.put(
+    `/api/v1/user/roles/${userId}`,
+    payload,
+  );
   return unwrapResult(response);
 };
 
@@ -148,7 +164,9 @@ export const softDeleteAdminProduct = async (productId) => {
 };
 
 export const restoreAdminProduct = async (productId) => {
-  const response = await axiosInstance.put(`/api/v1/product/restore/${productId}`);
+  const response = await axiosInstance.put(
+    `/api/v1/product/restore/${productId}`,
+  );
   return unwrapResult(response);
 };
 
@@ -158,8 +176,11 @@ export const hardDeleteAdminProduct = async (productId) => {
 };
 
 export const updateAdminProductStock = async (productId, stockQuantity) => {
-  const response = await axiosInstance.put(`/api/v1/product/stocks/${productId}`, {
-    stockQuantity,
-  });
+  const response = await axiosInstance.put(
+    `/api/v1/product/stocks/${productId}`,
+    {
+      stockQuantity,
+    },
+  );
   return unwrapResult(response);
 };

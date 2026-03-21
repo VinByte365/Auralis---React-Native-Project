@@ -3,7 +3,9 @@ import {
   archiveProduct,
   changeProductStock,
   changeUserRole,
+  createUser,
   createCategories,
+  editUser,
   editCategory,
   getAdminAnalyticsOverview,
   getAdminCategories,
@@ -153,7 +155,11 @@ const adminSlice = createSlice({
       })
       .addCase(getAdminOperationsAnalyticsData.rejected, (state, action) => {
         state.analytics.loading = false;
-        setError(state.analytics, action, "Failed to load operations analytics");
+        setError(
+          state.analytics,
+          action,
+          "Failed to load operations analytics",
+        );
       })
 
       .addCase(getAdminOrders.pending, (state) => {
@@ -327,6 +333,32 @@ const adminSlice = createSlice({
       .addCase(getAdminUsersData.rejected, (state, action) => {
         state.users.loading = false;
         setError(state.users, action, "Failed to fetch users");
+      })
+
+      .addCase(createUser.pending, (state) => {
+        state.users.updating = true;
+      })
+      .addCase(createUser.fulfilled, (state, action) => {
+        state.users.updating = false;
+        state.users.list = [action.payload, ...state.users.list];
+      })
+      .addCase(createUser.rejected, (state, action) => {
+        state.users.updating = false;
+        setError(state.users, action, "Failed to create user");
+      })
+
+      .addCase(editUser.pending, (state) => {
+        state.users.updating = true;
+      })
+      .addCase(editUser.fulfilled, (state, action) => {
+        state.users.updating = false;
+        state.users.list = state.users.list.map((user) =>
+          user?._id === action.payload?._id ? action.payload : user,
+        );
+      })
+      .addCase(editUser.rejected, (state, action) => {
+        state.users.updating = false;
+        setError(state.users, action, "Failed to update user");
       })
 
       .addCase(changeUserRole.pending, (state) => {

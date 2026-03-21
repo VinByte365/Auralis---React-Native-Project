@@ -1,5 +1,6 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import {
+  createAdminUser,
   createAdminCategories,
   deleteAdminCategory,
   deleteAdminUser,
@@ -23,6 +24,7 @@ import {
   updateAdminCategory,
   updateAdminOrderStatus,
   updateAdminProductStock,
+  updateAdminUser,
   updateAdminUserRole,
 } from "../../services/adminService";
 import { getErrorMessage } from "../../services/apiHelpers";
@@ -31,11 +33,12 @@ export const getAdminDashboardData = createAsyncThunk(
   "admin/getDashboardData",
   async (_, { rejectWithValue }) => {
     try {
-      const [summaryResult, activityResult, ordersResult] = await Promise.allSettled([
-        fetchAdminDashboardSummary(),
-        fetchAdminActivityLogs({ limit: 5 }),
-        fetchAdminOrders({ page: 1, limit: 5 }),
-      ]);
+      const [summaryResult, activityResult, ordersResult] =
+        await Promise.allSettled([
+          fetchAdminDashboardSummary(),
+          fetchAdminActivityLogs({ limit: 5 }),
+          fetchAdminOrders({ page: 1, limit: 5 }),
+        ]);
 
       return {
         summary:
@@ -305,6 +308,32 @@ export const getAdminUsersData = createAsyncThunk(
     } catch (error) {
       return rejectWithValue({
         error: getErrorMessage(error, "Failed to fetch users"),
+      });
+    }
+  },
+);
+
+export const createUser = createAsyncThunk(
+  "admin/createUser",
+  async (payload = {}, { rejectWithValue }) => {
+    try {
+      return await createAdminUser(payload);
+    } catch (error) {
+      return rejectWithValue({
+        error: getErrorMessage(error, "Failed to create user"),
+      });
+    }
+  },
+);
+
+export const editUser = createAsyncThunk(
+  "admin/editUser",
+  async ({ userId, payload }, { rejectWithValue }) => {
+    try {
+      return await updateAdminUser(userId, payload);
+    } catch (error) {
+      return rejectWithValue({
+        error: getErrorMessage(error, "Failed to update user"),
       });
     }
   },

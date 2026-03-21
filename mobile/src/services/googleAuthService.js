@@ -85,7 +85,6 @@ export const googleSignIn = async () => {
     return {
       user: result2.user,
       token: result2.token,
-      firebaseUser: user,
     };
   } catch (error) {
     console.error("Google Sign-In Error:", error);

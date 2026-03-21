@@ -13,7 +13,16 @@ function handlePending(state) {
 }
 
 function handleFulfilled(state, action) {
-  const nextUser = action.payload?.user || {};
+  const payloadUser = action.payload?.user;
+  const hasTopLevelIdentity = Boolean(
+    action.payload?._id || action.payload?.userId || action.payload?.id,
+  );
+  const nextUser =
+    payloadUser && typeof payloadUser === "object"
+      ? payloadUser
+      : hasTopLevelIdentity
+        ? action.payload
+        : {};
   const hasIdentity = Boolean(nextUser?._id || nextUser?.userId);
 
   state.isLoggedIn = true;

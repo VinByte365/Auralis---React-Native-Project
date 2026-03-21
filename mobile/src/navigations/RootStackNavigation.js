@@ -35,7 +35,11 @@ export default function RootStackNavigation() {
   const isBootstrapping = !userState?.bootstrapped;
   const isAuthenticated = Boolean(userState?.isLoggedIn || hasUserIdentity);
   const isSignedIn = userState?.bootstrapped && isAuthenticated;
-  const isAdmin = normalizedRole === "admin";
+  const isAdmin =
+    normalizedRole === "admin" ||
+    normalizedRole === "superadmin" ||
+    normalizedRole === "super_admin" ||
+    normalizedRole.includes("admin");
   const isSignedOut = userState?.bootstrapped && !isAuthenticated;
   // console.log(userState)
   // console.log(isBootstrapping,isSignedIn,isSignedOut)

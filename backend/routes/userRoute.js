@@ -16,21 +16,44 @@ router
 
 router
   .route("/user")
-  .get(authMiddleware.verifyToken, userController.getAllUser)
+  .get(
+    authMiddleware.verifyToken,
+    authMiddleware.roleAccess("admin"),
+    userController.getAllUser,
+  )
   .post(
     upload.single("avatar"),
     authMiddleware.verifyToken,
+    authMiddleware.roleAccess("admin"),
     userController.createUser,
   );
 
 router
   .route("/user/:userId")
-  .get(authMiddleware.verifyToken, userController.getUserById)
-  .delete(authMiddleware.verifyToken, userController.deleteUser);
+  .get(
+    authMiddleware.verifyToken,
+    authMiddleware.roleAccess("admin"),
+    userController.getUserById,
+  )
+  .put(
+    upload.single("avatar"),
+    authMiddleware.verifyToken,
+    authMiddleware.roleAccess("admin"),
+    userController.updateProfile,
+  )
+  .delete(
+    authMiddleware.verifyToken,
+    authMiddleware.roleAccess("admin"),
+    userController.deleteUser,
+  );
 
 router
   .route("/user/roles/:userId")
-  .put(authMiddleware.verifyToken, userController.updatePermission);
+  .put(
+    authMiddleware.verifyToken,
+    authMiddleware.roleAccess("admin"),
+    userController.updatePermission,
+  );
 
 router
   .route("/customer/home")
