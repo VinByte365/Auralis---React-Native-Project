@@ -1,11 +1,9 @@
 import React, { useMemo, useState } from "react";
 import {
   LayoutAnimation,
-  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
-  UIManager,
   View,
 } from "react-native";
 import { DrawerContentScrollView } from "@react-navigation/drawer";
@@ -13,13 +11,6 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useDispatch } from "react-redux";
 import { logout } from "../redux/thunks/authThunk";
 import { COLORS, FONT, RADIUS, SPACING } from "../constants/adminTheme";
-
-if (
-  Platform.OS === "android" &&
-  UIManager.setLayoutAnimationEnabledExperimental
-) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
 
 const MENU_GROUPS = [
   {

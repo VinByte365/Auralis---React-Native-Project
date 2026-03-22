@@ -8,7 +8,11 @@ import {
   signOut,
 } from "firebase/auth";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { GoogleSignin } from "@react-native-google-signin/google-signin";
+import {
+  GoogleSignin,
+  isErrorWithCode,
+  statusCodes,
+} from "@react-native-google-signin/google-signin";
 import axiosInstance from "../helper/axiosInstance";
 import { unwrapResult } from "./apiHelpers";
 
@@ -33,24 +37,37 @@ try {
   auth = getAuth(app);
 }
 
+let googleConfigured = false;
+
+function configureGoogleSignin() {
+  if (googleConfigured) return;
+
+  const webClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+
+  if (!webClientId) {
+    throw new Error("Missing EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID");
+  }
+
+  GoogleSignin.configure({
+    webClientId,
+    offlineAccess: false,
+    forceCodeForRefreshToken: false,
+  });
+
+  googleConfigured = true;
+}
+
 export const googleSignIn = async () => {
   try {
+    configureGoogleSignin();
+
     if (auth.currentUser) {
       await signOut(auth);
     }
 
-    const webClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
-    if (!webClientId) {
-      throw new Error("Missing EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID");
-    }
-
-    GoogleSignin.configure({
-      webClientId,
-      offlineAccess: false,
-      forceCodeForRefreshToken: false,
+    await GoogleSignin.hasPlayServices({
+      showPlayServicesUpdateDialog: true,
     });
-
-    await GoogleSignin.hasPlayServices();
     await GoogleSignin.signOut();
 
     const userInfo = await GoogleSignin.signIn();
@@ -88,17 +105,39 @@ export const googleSignIn = async () => {
     };
   } catch (error) {
     console.error("Google Sign-In Error:", error);
-    throw new Error(error.message || "Google Sign-In failed");
+
+    if (isErrorWithCode(error)) {
+      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+        throw new Error("Google Sign-In cancelled");
+      }
+      if (error.code === statusCodes.IN_PROGRESS) {
+        throw new Error("Google Sign-In already in progress");
+      }
+      if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+        throw new Error("Google Play Services not available");
+      }
+      if (error.code === statusCodes.SIGN_IN_FAILED) {
+        throw new Error(
+          "Google Sign-In failed in release build. Check Android OAuth client package/SHA fingerprints in Firebase.",
+        );
+      }
+    }
+
+    throw new Error(error?.message || "Google Sign-In failed");
   }
 };
 
 export const googleSignOut = async () => {
   try {
+    configureGoogleSignin();
+    await GoogleSignin.revokeAccess();
     await GoogleSignin.signOut();
     await signOut(auth);
   } catch (error) {
     console.error("Google Sign-Out Error:", error);
-    throw error;
+    if (auth.currentUser) {
+      await signOut(auth);
+    }
   }
 };
 

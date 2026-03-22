@@ -2,7 +2,7 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import * as authService from "../../services/authService";
 import * as googleAuthService from "../../services/googleAuthService";
 import { getErrorMessage } from "../../services/apiHelpers";
-import { removeToken, storeToken } from "../../utils/token";
+import { getToken, removeToken, storeToken } from "../../utils/token";
 import { removePushToken } from "../../services/userService";
 
 export const login = createAsyncThunk(
@@ -41,6 +41,10 @@ export const hydrateSession = createAsyncThunk(
   "auth/hydrateSession",
   async (_, thunkAPI) => {
     try {
+      const token = await getToken();
+      if (!token) {
+        throw new Error("No local session token");
+      }
       return await authService.getCurrentUser();
     } catch (error) {
       await removeToken();
@@ -57,6 +61,9 @@ export const logout = createAsyncThunk("auth/logout", async (_, thunkAPI) => {
     await authService.logout();
   } catch {
   } finally {
+    try {
+      await googleAuthService.googleSignOut();
+    } catch {}
     await removeToken();
   }
 
