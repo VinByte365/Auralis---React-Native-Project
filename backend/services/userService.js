@@ -7,13 +7,20 @@ const bcrypt = require("bcrypt");
 exports.update = async (request) => {
   const { userId } = request.params;
   if (!request.body) throw new Error("undefined request content");
-  if (request.file)
+
+  // Get the old user data to safely delete old avatar
+  const oldUser = await User.findById(userId);
+  const oldAvatarPublicId = oldUser?.avatar?.public_id;
+
+  if (request.file) {
     request.body.avatar = await uploadImage([request.file], "users");
+  }
+
   const user = await User.findByIdAndUpdate(userId, request.body, {
     new: true,
     runValidators: true,
   });
-  if (user?.avatar?.public_id) deleteAssets([user.avatar.public_id]);
+
   if (!user) {
     createLog(
       request.user.userId,
@@ -23,6 +30,12 @@ exports.update = async (request) => {
     );
     throw new Error("failed to update the user");
   }
+
+  // Delete old avatar after successful update
+  if (oldAvatarPublicId && request.file) {
+    await deleteAssets([oldAvatarPublicId]);
+  }
+
   createLog(
     request.user.userId,
     "UPDATE_USER",
