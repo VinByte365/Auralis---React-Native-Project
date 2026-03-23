@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
+  Alert,
   Modal,
   ScrollView,
   StyleSheet,
@@ -55,6 +56,11 @@ const BARCODE_OPTIONS = [
   "CODE_128",
   "QR",
 ];
+
+const IMAGE_MEDIA_TYPE =
+  ImagePicker.MediaType?.Images ||
+  ImagePicker.MediaTypeOptions?.Images ||
+  "images";
 
 function formatCurrency(value) {
   const amount = Number(value || 0);
@@ -130,31 +136,52 @@ export default function ProductList() {
   };
 
   const pickImageFromGallery = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaType.Images,
-      quality: 0.8,
-      allowsMultipleSelection: true,
-      selectionLimit: 5,
-    });
+    try {
+      const permission =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        Alert.alert("Permission needed", "Please allow gallery access.");
+        return;
+      }
 
-    if (result.canceled) return;
-    const assets = result.assets || [];
-    setSelectedImages((prev) => [...prev, ...assets].slice(0, 5));
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: IMAGE_MEDIA_TYPE,
+        quality: 0.8,
+        allowsMultipleSelection: true,
+        selectionLimit: 5,
+      });
+
+      if (result.canceled) return;
+      const assets = result.assets || [];
+      setSelectedImages((prev) => [...prev, ...assets].slice(0, 5));
+    } catch {
+      Alert.alert("Upload failed", "Unable to open gallery. Please try again.");
+    }
   };
 
   const captureImageFromCamera = async () => {
-    const permission = await ImagePicker.requestCameraPermissionsAsync();
-    if (!permission.granted) return;
+    try {
+      const permission = await ImagePicker.requestCameraPermissionsAsync();
+      if (!permission.granted) {
+        Alert.alert("Permission needed", "Please allow camera access.");
+        return;
+      }
 
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaType.Images,
-      quality: 0.8,
-    });
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: IMAGE_MEDIA_TYPE,
+        quality: 0.8,
+      });
 
-    if (result.canceled) return;
-    const asset = result.assets?.[0];
-    if (!asset) return;
-    setSelectedImages((prev) => [...prev, asset].slice(0, 5));
+      if (result.canceled) return;
+      const asset = result.assets?.[0];
+      if (!asset) return;
+      setSelectedImages((prev) => [...prev, asset].slice(0, 5));
+    } catch {
+      Alert.alert(
+        "Camera unavailable",
+        "Unable to open camera. Please try again.",
+      );
+    }
   };
 
   const submitProductForm = async () => {

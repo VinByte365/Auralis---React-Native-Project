@@ -9,6 +9,7 @@ import {
   View,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
+import { useNavigation } from "@react-navigation/native";
 import { useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { getOrders } from "../../redux/thunks/orderThunks";
@@ -44,6 +45,7 @@ function formatDate(value) {
 }
 
 export default function OrderScreen() {
+  const navigation = useNavigation();
   const dispatch = useDispatch();
   const { orders, isLoading, error } = useSelector((state) => state.order);
   const [activeFilter, setActiveFilter] = useState("ALL");
@@ -109,7 +111,11 @@ export default function OrderScreen() {
     };
 
     return (
-      <View style={styles.orderCard}>
+      <TouchableOpacity
+        style={styles.orderCard}
+        activeOpacity={0.85}
+        onPress={() => navigation.navigate("OrderDetails", { order: item })}
+      >
         <View style={styles.orderTopRow}>
           <Text style={styles.orderId}>
             Order #{String(item._id).slice(-6)}
@@ -139,7 +145,7 @@ export default function OrderScreen() {
             ₱ {formatMoney(item.finalAmountPaid)}
           </Text>
         </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 
