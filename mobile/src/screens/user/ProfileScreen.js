@@ -142,10 +142,12 @@ export default function ProfileScreen() {
       await dispatch(hydrateSession()).unwrap();
       Alert.alert("Success", "Profile updated successfully.");
     } catch (error) {
-      Alert.alert(
-        "Update failed",
-        error?.error || error?.message || "Please try again.",
-      );
+      const errorMessage =
+        error?.message ||
+        error?.error ||
+        error?.raw?.response?.data?.message ||
+        "Please try again.";
+      Alert.alert("Update failed", errorMessage);
     } finally {
       setIsSaving(false);
     }
