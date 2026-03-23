@@ -21,12 +21,20 @@ function controllerWrapper(fn) {
         result,
       });
     } catch (error) {
-      if(error.code === 11000) return res.status(201)
+      if (error.code === 11000) {
+        return res.status(409).json({
+          success: false,
+          message: "duplicate key error",
+        });
+      }
       console.error(`=== Controller ${fn.name} ERROR ===`);
       console.error("Error message:", error.message);
       console.error("Error stack:", error.stack);
       console.log(error.message, error.line, error);
-      return res.status(500).json(error);
+      return res.status(error.statusCode || 500).json({
+        success: false,
+        message: error.message || "Internal server error",
+      });
     }
   };
 }

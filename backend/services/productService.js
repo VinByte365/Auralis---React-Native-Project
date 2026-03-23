@@ -240,7 +240,7 @@ const update = async (request = {}) => {
     };
   }
   const product = await Product.findByIdAndUpdate(productId, updateQuery, {
-    new: true,
+    returnDocument: "after",
     upsert: true,
     runValidators: true,
   });
@@ -298,7 +298,7 @@ const softDelete = async (request) => {
     {
       deletedAt: now,
     },
-    { new: true },
+    { returnDocument: "after" },
   );
 
   if (!isUpdated) {
@@ -328,7 +328,7 @@ const restore = async (request) => {
     {
       deletedAt: null,
     },
-    { new: true, runValidators: true },
+    { returnDocument: "after", runValidators: true },
   );
 
   if (!restoredProduct) {
@@ -380,7 +380,7 @@ const updateStock = async (request) => {
   if (!request.body) throw new Error("undefined request body");
   const { productId } = request.params;
   const isUpdated = await Product.findByIdAndUpdate(productId, request.body, {
-    new: true,
+    returnDocument: "after",
   });
   if (isUpdated) {
   }

@@ -14,5 +14,8 @@ router
 router
   .route("/orders/:orderId/status")
   .put(authMiddlware.verifyToken, orderController.updateOrderStatus);
+router
+  .route("/orders/:orderId")
+  .get(authMiddlware.verifyToken, orderController.getOrderById);
 
 module.exports = router;

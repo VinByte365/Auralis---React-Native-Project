@@ -14,9 +14,9 @@ exports.list = async () => {
     {
       $project: {
         categoryName: 1,
-        isBNPC:1,
-        bnpcCategory:1,
-        applicableTo:1,
+        isBNPC: 1,
+        bnpcCategory: 1,
+        applicableTo: 1,
         count: { $size: "$products" },
       },
     },
@@ -39,14 +39,14 @@ exports.create = async (request) => {
     );
     throw new Error("categories must be array object type");
   }
-   const result = await Category.insertMany(categories, { ordered: false });
-    createLog(
-      request.user.userId,
-      "CREATE_CATEGORY",
-      "SUCCESS",
-      `Successfully created the category/categories`,
-    );
-   return result
+  const result = await Category.insertMany(categories, { ordered: false });
+  createLog(
+    request.user.userId,
+    "CREATE_CATEGORY",
+    "SUCCESS",
+    `Successfully created the category/categories`,
+  );
+  return result;
 };
 
 exports.update = async (request) => {
@@ -55,23 +55,24 @@ exports.update = async (request) => {
   const updateCategory = await Category.findByIdAndUpdate(
     categoryId,
     request.body.categoryData,
-    { new: true },
+    { returnDocument: "after" },
   );
 
   if (!updateCategory) {
-     createLog(
+    createLog(
       request.user.userId,
       "UPDATE_CATEGORY",
       "SUCCESS",
       `Failed to update the category with the ID: ${categoryId}`,
     );
-    throw new Error("failed to update the category")};
-   createLog(
-      request.user.userId,
-      "UPDATE_CATEGORY",
-      "SUCCESS",
-      `Successfully updated the ${updateCategory.categoryName}`,
-    );
+    throw new Error("failed to update the category");
+  }
+  createLog(
+    request.user.userId,
+    "UPDATE_CATEGORY",
+    "SUCCESS",
+    `Successfully updated the ${updateCategory.categoryName}`,
+  );
   return updateCategory;
 };
 
@@ -80,18 +81,19 @@ exports.delete = async (request) => {
   if (!categoryId) throw new Error("undefined category id");
   const deleteCategory = await Category.findByIdAndDelete(categoryId);
   if (!deleteCategory) {
-     createLog(
+    createLog(
       request.user.userId,
       "DELETE_CATEGORY",
       "FAILED",
       `Successfully deleted the category with the ID ${categoryId}`,
     );
-    throw new Error("failed to delete the category")};
-   createLog(
-      request.user.userId,
-      "DELETE_CATEGORY",
-      "SUCCESS",
-      `Successfully deleted ${deleteCategory.categoryName}`,
-    );
+    throw new Error("failed to delete the category");
+  }
+  createLog(
+    request.user.userId,
+    "DELETE_CATEGORY",
+    "SUCCESS",
+    `Successfully deleted ${deleteCategory.categoryName}`,
+  );
   return deleteCategory;
 };

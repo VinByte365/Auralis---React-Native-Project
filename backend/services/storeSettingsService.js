@@ -41,7 +41,7 @@ exports.updateSettings = async (updateData, userId) => {
       lastUpdatedBy: userId,
     },
     {
-      new: true,
+      returnDocument: "after",
       upsert: true,
       runValidators: true,
     },

@@ -228,7 +228,7 @@ exports.updateOrderStatus = async (request = {}) => {
       status,
     },
     {
-      new: true,
+      returnDocument: "after",
       runValidators: true,
     },
   ).populate("user", "name email");
@@ -256,6 +256,38 @@ exports.updateOrderStatus = async (request = {}) => {
       },
     },
   );
+
+  return order;
+};
+
+// Get a single order by ID for the authenticated user
+exports.getOrderById = async (request = {}) => {
+  const { userId } = request.user || {};
+  const { orderId } = request.params || {};
+
+  console.log("[ORDER][GET_BY_ID] request", { userId, orderId });
+
+  if (!userId) throw new Error("authenticated user is required");
+  if (!orderId) throw new Error("order id is required");
+
+  const order = await Order.findOne({
+    _id: orderId,
+    user: userId,
+    deletedAt: null,
+  })
+    .populate("items.product")
+    .lean();
+
+  if (!order) {
+    console.log("[ORDER][GET_BY_ID] not found", { userId, orderId });
+    throw new Error("order not found");
+  }
+
+  console.log("[ORDER][GET_BY_ID] success", {
+    orderId: order._id,
+    status: order.status,
+    itemsCount: Array.isArray(order.items) ? order.items.length : 0,
+  });
 
   return order;
 };

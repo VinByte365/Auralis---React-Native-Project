@@ -16,7 +16,7 @@ exports.updateCart = async (request) => {
     "⚠️ [CART SERVICE] updateCart is deprecated (session-based cart)",
   );
   const cart = await Cart.findOneAndUpdate({ user: userId }, updatedCart, {
-    new: true,
+    returnDocument: "after",
     upsert: true,
     runValidators: true,
   });
@@ -68,6 +68,6 @@ exports.clearCart = async (request) => {
   console.warn(
     "⚠️ [CART SERVICE] clearCart is deprecated (session-based cart)",
   );
-  const result = await Cart.findOneAndDelete({ user: userId }, { new: true });
+  const result = await Cart.findOneAndDelete({ user: userId });
   return result;
 };

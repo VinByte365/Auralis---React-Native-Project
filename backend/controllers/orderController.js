@@ -20,6 +20,7 @@ async function confirmOrder(req, res) {
 }
 
 const getUser_OrderList = controllerWrapper(orderService.getOrders);
+const getOrderById = controllerWrapper(orderService.getOrderById);
 
 const getAllOrdersAdmin = controllerWrapper(orderService.getAllOrdersAdmin);
 const updateOrderStatus = controllerWrapper(orderService.updateOrderStatus);
@@ -27,6 +28,7 @@ const updateOrderStatus = controllerWrapper(orderService.updateOrderStatus);
 module.exports = {
   confirmOrder,
   getUser_OrderList,
+  getOrderById,
   getAllOrdersAdmin,
   updateOrderStatus,
 };

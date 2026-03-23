@@ -255,7 +255,7 @@ exports.update = async (request = {}) => {
 
   const payload = normalizeUpdatePayload(request.body || {});
   const updated = await Promo.findByIdAndUpdate(promoId, payload, {
-    new: true,
+    returnDocument: "after",
     runValidators: true,
   });
 

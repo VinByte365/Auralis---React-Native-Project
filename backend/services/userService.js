@@ -17,7 +17,7 @@ exports.update = async (request) => {
   }
 
   const user = await User.findByIdAndUpdate(userId, request.body, {
-    new: true,
+    returnDocument: "after",
     runValidators: true,
   });
 
@@ -97,7 +97,7 @@ exports.rolesAndPermission = async (request) => {
   if (!request.body) throw new Error("undefined body");
   const { userId } = request.params;
   const user = await User.findByIdAndUpdate(userId, request.body, {
-    new: true,
+    returnDocument: "after",
     runValidators: true,
   });
   if (!user) {
