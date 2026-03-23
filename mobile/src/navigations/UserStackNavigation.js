@@ -10,6 +10,7 @@ import { useDispatch } from "react-redux";
 import { logout } from "../redux/thunks/authThunk";
 import UserHomeStackNavigation from "./UserHomeStackNavigation";
 import OrderScreen from "../screens/user/OrderScreen";
+import OrderDetailScreen from "../screens/user/OrderDetailScreen";
 import ProfileScreen from "../screens/user/ProfileScreen";
 import MoreScreen from "../screens/user/MoreScreen";
 import NotificationDetailsScreen from "../screens/user/NotificationDetailsScreen";
@@ -67,6 +68,14 @@ export default function UserStackNavigation() {
               color={color}
             />
           ),
+        }}
+      />
+      <Drawer.Screen
+        name="OrderDetails"
+        component={OrderDetailScreen}
+        options={{
+          title: "Order Details",
+          drawerItemStyle: { display: "none" },
         }}
       />
       <Drawer.Screen

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -14,6 +15,22 @@ function formatPrice(value) {
   const amount = Number(value || 0);
   if (!Number.isFinite(amount) || amount <= 0) return "N/A";
   return `PHP ${amount.toLocaleString()}`;
+}
+
+function formatDate(date) {
+  if (!date) return "N/A";
+  try {
+    const d = new Date(date);
+    return d.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return "N/A";
+  }
 }
 
 function normalizeParams(rawParams) {
@@ -59,8 +76,12 @@ export default function NotificationDetailsScreen({ route, navigation }) {
       : "promotion");
   const notificationType = String(inferredType).toLowerCase();
   const isPromoNotification = notificationType === "promo";
-  const title = params?.title || "Promotion Details";
-  const message = params?.message || "Promotion information";
+
+  // Order type detection
+  const isOrderNotification = Boolean(params?.orderId || params?.orderNumber);
+
+  const title = params?.title || "Notification Details";
+  const message = params?.message || "Notification information";
   const productName = product?.name || params?.productName || "N/A";
   const discountPercent = params?.discountPercent || "N/A";
   const oldPrice = params?.oldPrice;
@@ -75,16 +96,20 @@ export default function NotificationDetailsScreen({ route, navigation }) {
   const promoUsageLimit = params?.usageLimit;
   const promoUseCount = params?.useCount;
 
+  // Order details
+  const orderId = params?.orderId;
+  const orderNumber = params?.orderNumber;
+  const orderStatus = params?.status;
+  const orderTotal = params?.orderTotal;
+  const itemsCount = params?.itemsCount;
+  const deliveryAddress = params?.deliveryAddress;
+  const paymentMethod = params?.paymentMethod;
+
   useEffect(() => {
-    console.log("[Push][Details] Route params (raw):", route?.params || {});
-    console.log("[Push][Details] Route params (normalized):", params);
-    console.log("[Push][Details] Type resolution:", {
-      inferredType,
-      notificationType,
-      isPromoNotification,
-    });
+    // Notification details loaded
   }, [
     inferredType,
+    isOrderNotification,
     isPromoNotification,
     notificationType,
     params,
@@ -95,7 +120,7 @@ export default function NotificationDetailsScreen({ route, navigation }) {
     let active = true;
 
     async function loadProduct() {
-      if (isPromoNotification) {
+      if (isPromoNotification || isOrderNotification) {
         setProduct(null);
         setLoadError("");
         return;
@@ -132,7 +157,7 @@ export default function NotificationDetailsScreen({ route, navigation }) {
     return () => {
       active = false;
     };
-  }, [isPromoNotification, productId]);
+  }, [isPromoNotification, isOrderNotification, productId]);
 
   const resolvedBasePrice =
     Number(product?.price || oldPrice || 0) > 0
@@ -152,6 +177,25 @@ export default function NotificationDetailsScreen({ route, navigation }) {
       : Number(discountPercent) || 0;
 
   const details = useMemo(() => {
+    if (isOrderNotification) {
+      return [
+        { label: "Order #", value: orderNumber || "N/A" },
+        { label: "Status", value: orderStatus || "PENDING" },
+        { label: "Total Amount", value: formatPrice(orderTotal) },
+        { label: "Items", value: String(itemsCount || 0) },
+        { label: "Payment Method", value: paymentMethod || "N/A" },
+        { label: "Delivery Address", value: deliveryAddress || "N/A" },
+        {
+          label: "Notification ID",
+          value: params?.notificationId?.slice(0, 12) || "N/A",
+        },
+        {
+          label: "Sent At",
+          value: formatDate(params?.timestamp),
+        },
+      ];
+    }
+
     if (isPromoNotification) {
       const numericPromoValue = Number(promoValue || 0);
       const promoValueText =
@@ -173,6 +217,14 @@ export default function NotificationDetailsScreen({ route, navigation }) {
               ? `${Number(promoUseCount || 0)} / ${Number(promoUsageLimit || 0)}`
               : "N/A",
         },
+        {
+          label: "Minimum Purchase",
+          value: formatPrice(params?.minPurchase),
+        },
+        {
+          label: "Valid Until",
+          value: formatDate(params?.endDate),
+        },
       ];
     }
 
@@ -182,11 +234,21 @@ export default function NotificationDetailsScreen({ route, navigation }) {
         label: "Discount",
         value: resolvedDiscount > 0 ? `${resolvedDiscount}%` : "N/A",
       },
-      { label: "Old Price", value: formatPrice(resolvedBasePrice) },
-      { label: "New Price", value: formatPrice(resolvedSalePrice) },
+      {
+        label: "Discount Amount",
+        value: formatPrice(
+          resolvedBasePrice && resolvedSalePrice
+            ? resolvedBasePrice - resolvedSalePrice
+            : 0,
+        ),
+      },
+      { label: "Original Price", value: formatPrice(resolvedBasePrice) },
+      { label: "Sale Price", value: formatPrice(resolvedSalePrice) },
+      { label: "Stock Available", value: String(params?.stock || 0) },
     ];
   }, [
     isPromoNotification,
+    isOrderNotification,
     productName,
     resolvedBasePrice,
     resolvedDiscount,
@@ -198,7 +260,34 @@ export default function NotificationDetailsScreen({ route, navigation }) {
     promoUsageLimit,
     promoUseCount,
     promoValue,
+    orderStatus,
+    orderTotal,
+    itemsCount,
+    deliveryAddress,
+    paymentMethod,
+    orderNumber,
+    params,
   ]);
+
+  const getStatusColor = (status) => {
+    if (!status) return "#666";
+    const normalizedStatus = String(status).toUpperCase();
+    switch (normalizedStatus) {
+      case "COMPLETED":
+      case "DELIVERED":
+        return "#4CAF50";
+      case "CANCELLED":
+        return "#f44336";
+      case "PENDING":
+      case "CONFIRMED":
+        return "#FF9800";
+      case "SHIPPED":
+      case "IN_TRANSIT":
+        return "#2196F3";
+      default:
+        return "#666";
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -213,45 +302,96 @@ export default function NotificationDetailsScreen({ route, navigation }) {
         <View style={styles.iconSpacer} />
       </View>
 
-      <View style={styles.card}>
-        <Text style={styles.title}>{title}</Text>
-        <Text style={styles.message}>{message}</Text>
+      <ScrollView showsVerticalScrollIndicator={false} style={styles.scroll}>
+        <View style={styles.card}>
+          {isOrderNotification && (
+            <View
+              style={[
+                styles.statusBadge,
+                { borderLeftColor: getStatusColor(orderStatus) },
+              ]}
+            >
+              <Text style={styles.statusLabel}>Order Status</Text>
+              <Text
+                style={[
+                  styles.statusValue,
+                  { color: getStatusColor(orderStatus) },
+                ]}
+              >
+                {orderStatus || "PENDING"}
+              </Text>
+            </View>
+          )}
 
-        {loading ? (
-          <View style={styles.loadingRow}>
-            <ActivityIndicator size="small" color="#111" />
-            <Text style={styles.loadingText}>Loading product details...</Text>
+          <Text style={styles.title}>{title}</Text>
+          <Text style={styles.message}>{message}</Text>
+
+          {loading ? (
+            <View style={styles.loadingRow}>
+              <ActivityIndicator size="small" color="#111" />
+              <Text style={styles.loadingText}>Loading product details...</Text>
+            </View>
+          ) : null}
+
+          {!loading && loadError ? (
+            <Text style={styles.errorText}>{loadError}</Text>
+          ) : null}
+
+          <View style={styles.divider} />
+
+          <View style={styles.detailsContainer}>
+            {details.map((item, index) => (
+              <View key={item.label}>
+                <View style={styles.row}>
+                  <Text style={styles.label}>{item.label}</Text>
+                  <Text style={styles.value}>{item.value}</Text>
+                </View>
+                {index < details.length - 1 && (
+                  <View style={styles.rowDivider} />
+                )}
+              </View>
+            ))}
           </View>
+        </View>
+
+        {!isPromoNotification && !isOrderNotification ? (
+          <TouchableOpacity
+            style={[styles.primaryBtn, !productId && styles.disabledBtn]}
+            disabled={!productId}
+            onPress={() =>
+              navigation.navigate("Home", {
+                screen: "Product",
+                params: { productId },
+              })
+            }
+          >
+            <MaterialCommunityIcons
+              name="shopping"
+              size={18}
+              color="#fff"
+              style={{ marginRight: 8 }}
+            />
+            <Text style={styles.primaryBtnText}>View Product</Text>
+          </TouchableOpacity>
+        ) : isOrderNotification ? (
+          <TouchableOpacity
+            style={styles.primaryBtn}
+            onPress={() =>
+              navigation.navigate("OrderDetails", {
+                orderId,
+              })
+            }
+          >
+            <MaterialCommunityIcons
+              name="package-variant"
+              size={18}
+              color="#fff"
+              style={{ marginRight: 8 }}
+            />
+            <Text style={styles.primaryBtnText}>View Order</Text>
+          </TouchableOpacity>
         ) : null}
-
-        {!loading && loadError ? (
-          <Text style={styles.errorText}>{loadError}</Text>
-        ) : null}
-
-        <View style={styles.divider} />
-
-        {details.map((item) => (
-          <View key={item.label} style={styles.row}>
-            <Text style={styles.label}>{item.label}</Text>
-            <Text style={styles.value}>{item.value}</Text>
-          </View>
-        ))}
-      </View>
-
-      {!isPromoNotification ? (
-        <TouchableOpacity
-          style={[styles.primaryBtn, !productId && styles.disabledBtn]}
-          disabled={!productId}
-          onPress={() =>
-            navigation.navigate("Home", {
-              screen: "Product",
-              params: { productId },
-            })
-          }
-        >
-          <Text style={styles.primaryBtnText}>View Product</Text>
-        </TouchableOpacity>
-      ) : null}
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -260,14 +400,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
-    paddingHorizontal: 16,
-    paddingTop: 12,
+    paddingHorizontal: 0,
+    paddingTop: 0,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
   },
   iconBtn: {
     width: 36,
@@ -284,12 +427,38 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#111",
   },
+  scroll: {
+    flex: 1,
+  },
   card: {
+    margin: 16,
     backgroundColor: "#f8f8f8",
     borderRadius: 14,
     padding: 16,
     borderWidth: 1,
     borderColor: "#ececec",
+  },
+  statusBadge: {
+    marginBottom: 14,
+    paddingLeft: 12,
+    paddingVertical: 12,
+    paddingRight: 12,
+    borderLeftWidth: 4,
+    backgroundColor: "#f5f5f5",
+    borderRadius: 8,
+    marginHorizontal: -16,
+    marginTop: -16,
+    marginBottom: 14,
+    paddingHorizontal: 16,
+  },
+  statusLabel: {
+    fontSize: 12,
+    color: "#666",
+    marginBottom: 4,
+  },
+  statusValue: {
+    fontSize: 16,
+    fontWeight: "700",
   },
   title: {
     fontSize: 18,
@@ -322,27 +491,40 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: "#e3e3e3",
   },
+  detailsContainer: {
+    marginTop: 4,
+  },
   row: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 6,
+    paddingVertical: 10,
+  },
+  rowDivider: {
+    height: 1,
+    backgroundColor: "#e8e8e8",
   },
   label: {
     fontSize: 13,
     color: "#666",
+    maxWidth: "60%",
   },
   value: {
     fontSize: 13,
     fontWeight: "600",
     color: "#111",
+    maxWidth: "40%",
+    textAlign: "right",
   },
   primaryBtn: {
-    marginTop: 16,
+    flexDirection: "row",
+    marginHorizontal: 16,
+    marginBottom: 16,
     backgroundColor: "#111",
     borderRadius: 10,
     paddingVertical: 14,
     alignItems: "center",
+    justifyContent: "center",
   },
   primaryBtnText: {
     color: "#fff",

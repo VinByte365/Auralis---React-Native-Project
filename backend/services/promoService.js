@@ -54,6 +54,22 @@ function buildPromoNotification({ promo, action = "created" } = {}) {
         usageLimit: String(promo?.usageLimit || 0),
         useCount: String(promo?.usedCount || 0),
       },
+      details: {
+        promoId: String(promo?._id || ""),
+        promoName,
+        promoType,
+        discountValue: String(promo?.value || 0),
+        discountText: valueText,
+        promoCode: code,
+        scope: String(promo?.scope || "cart"),
+        minPurchase: String(promo?.minPurchase || 0),
+        startDate: promo?.startDate?.toISOString(),
+        endDate: promo?.endDate?.toISOString(),
+        usageLimit: String(promo?.usageLimit || "Unlimited"),
+        usedCount: String(promo?.usedCount || 0),
+        isActive,
+        action,
+      },
     },
   };
 }
@@ -64,15 +80,10 @@ async function notifyPromoUsers(promo, action = "created") {
     const result = await sendPromotionNotificationToUsers(payload);
 
     if (!result?.sent) {
-      console.log(
-        `[Push] Promo notification skipped (${action}) for ${promo?._id}: ${result?.reason || "unknown_reason"}`,
-      );
+      // Promo notification skipped
     }
   } catch (error) {
-    console.log(
-      `[Push] Promo notification failed (${action}) for ${promo?._id}:`,
-      error?.message || error,
-    );
+    // Promo notification failed
   }
 }
 

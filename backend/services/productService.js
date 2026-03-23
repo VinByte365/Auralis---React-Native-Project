@@ -43,19 +43,27 @@ async function notifyPromotionForProduct(product, type = "promotion") {
           newPrice: String(discountedPrice),
           discountPercent: String(discountPercent),
         },
+        details: {
+          productId: String(product._id),
+          productName: product.name,
+          originalPrice: String(originalPrice),
+          salePrice: String(discountedPrice),
+          discountPercent: String(discountPercent),
+          discountAmount: String(originalPrice - discountedPrice),
+          stock: String(product.stockQuantity || 0),
+          category: String(product.category || ""),
+          saleActive: Boolean(product.saleActive),
+          type,
+          updatedAt: new Date().toISOString(),
+        },
       },
     });
 
     if (!result?.sent) {
-      console.log(
-        `[Push] Promotion broadcast skipped for ${product._id}: ${result?.reason || "unknown_reason"}`,
-      );
+      // Promotion broadcast skipped
     }
   } catch (error) {
-    console.log(
-      `[Push] Promotion broadcast failed for ${product?._id}:`,
-      error?.message || error,
-    );
+    // Promotion broadcast failed
   }
 }
 
@@ -95,7 +103,6 @@ const buildProductFilters = (query = {}) => {
 
 const create = async (request) => {
   if (!request.body) throw new Error(`theres no payload`);
-  console.log(request.user);
   let newImages = [];
   if (request.files && request.files.length > 0) {
     let temp = await uploadImage(request.files, "products");
@@ -214,13 +221,18 @@ const update = async (request = {}) => {
     newImages = Array.isArray(temp) ? temp : [temp];
   }
 
+  const safeBody = {
+    ...(request.body || {}),
+  };
+  delete safeBody.images;
+
   const updateQuery = {
-    ...request.body,
+    ...safeBody,
     deletedAt: null,
   };
 
-  if (request.body.discountScopes) {
-    updateQuery.discountScopes = String(request.body.discountScopes).split(",");
+  if (safeBody.discountScopes) {
+    updateQuery.discountScopes = String(safeBody.discountScopes).split(",");
   }
   if (newImages.length > 0) {
     updateQuery.$push = {
@@ -250,8 +262,8 @@ const update = async (request = {}) => {
   );
 
   const isDiscountMutation =
-    Object.prototype.hasOwnProperty.call(request.body || {}, "salePrice") ||
-    Object.prototype.hasOwnProperty.call(request.body || {}, "saleActive");
+    Object.prototype.hasOwnProperty.call(safeBody, "salePrice") ||
+    Object.prototype.hasOwnProperty.call(safeBody, "saleActive");
 
   if (isDiscountMutation) {
     await notifyPromotionForProduct(product, "promotion_update");
@@ -273,7 +285,6 @@ const removeImg = async (request) => {
   updateProductImage.images = updateProductImage.images.filter(
     (image) => image.public_id !== publicId,
   );
-  console.log(updateProductImage.images);
   await updateProductImage.save();
 
   return deletionStatus;

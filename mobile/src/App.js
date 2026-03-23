@@ -54,19 +54,9 @@ function Bootstrapper() {
           syncedPushTokenRef.current = syncKey;
         }
 
-        if (token && mounted) {
-          console.log("Expo push token:", token);
-        }
-        if (error && mounted) {
-          console.log("Push setup:", error);
-        }
+        // Push token registered
       } catch (notificationError) {
-        if (mounted) {
-          console.log(
-            "Push setup failed:",
-            notificationError?.message || notificationError,
-          );
-        }
+        // Push setup error silently handled
       }
     }
 
