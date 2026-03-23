@@ -9,6 +9,7 @@ import {
   View,
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
+import { useSelector } from "react-redux";
 
 function formatMoney(value) {
   return Number(value || 0).toFixed(2);
@@ -32,8 +33,16 @@ function formatDate(value) {
 export default function OrderDetailScreen() {
   const navigation = useNavigation();
   const route = useRoute();
+  const orders = useSelector((state) => state.order.orders);
 
-  const order = route.params?.order;
+  const passedOrder = route.params?.order;
+  const orderId = route.params?.orderId;
+
+  // Try to find order from Redux if orderId provided but order not passed
+  const order =
+    passedOrder ||
+    (orderId ? orders.find((o) => String(o._id) === String(orderId)) : null);
+
   const items = Array.isArray(order?.items) ? order.items : [];
   const itemCount = items.reduce(
     (sum, orderItem) => sum + Number(orderItem?.quantity || 0),

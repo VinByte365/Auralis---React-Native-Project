@@ -25,26 +25,14 @@ async function getPushTokenAndTrigger(userId, body, data = {}) {
     const result = await sendPushToUser(pushToken, "Auralis", body, data);
 
     if (!result?.sent) {
-      console.log(
-        `[Push] Skipped notification for user ${userId}: ${result?.reason || "unknown_reason"}`,
-      );
       return;
     }
 
     const hasErrorTicket = (result.tickets || []).some(
       (ticket) => ticket?.status === "error",
     );
-    if (hasErrorTicket) {
-      console.log(
-        `[Push] Expo returned error ticket(s) for user ${userId}`,
-        result.tickets,
-      );
-    }
   } catch (error) {
-    console.log(
-      `[Push] Failed to send notification for user ${userId}:`,
-      error?.message || error,
-    );
+    // Notification send failed
   }
 }
 
@@ -155,8 +143,18 @@ exports.confirmOrder = async (request = {}) => {
       userId,
       `Your order ${createdOrder._id} is now pending`,
       {
-        screen: "Order",
-        params: { orderId: String(createdOrder._id) },
+        screen: "OrderDetails",
+        params: {
+          orderId: String(createdOrder._id),
+          orderNumber: createdOrder._id?.toString()?.slice(-8),
+        },
+        details: {
+          orderTotal: String(createdOrder.total || 0),
+          itemsCount: createdOrder.items?.length || 0,
+          status: "PENDING",
+          createdAt: createdOrder.createdAt?.toISOString(),
+          deliveryAddress: createdOrder.deliveryAddress,
+        },
       },
     );
 
@@ -241,8 +239,21 @@ exports.updateOrderStatus = async (request = {}) => {
     order.user?._id || order.user,
     `Your order ${order._id} is now ${status}`,
     {
-      screen: "Order",
-      params: { orderId: String(order._id) },
+      screen: "OrderDetails",
+      params: {
+        orderId: String(order._id),
+        orderNumber: order._id?.toString()?.slice(-8),
+        status,
+      },
+      details: {
+        orderTotal: String(order.total || 0),
+        itemsCount: order.items?.length || 0,
+        previousStatus: order.previousStatus || "PENDING",
+        status,
+        updatedAt: new Date().toISOString(),
+        deliveryAddress: order.deliveryAddress,
+        paymentMethod: order.paymentMethod,
+      },
     },
   );
 

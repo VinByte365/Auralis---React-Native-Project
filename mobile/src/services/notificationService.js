@@ -29,6 +29,24 @@ async function ensureAndroidChannel() {
     lightColor: "#FF231F7C",
     sound: "default",
   });
+
+  // Create order-specific notification channel
+  await Notifications.setNotificationChannelAsync("order", {
+    name: "Order Updates",
+    importance: Notifications.AndroidImportance.HIGH,
+    lightColor: "#2196F3",
+    sound: "default",
+    vibrationPattern: [0, 250, 250, 250],
+  });
+
+  // Create promotion-specific notification channel
+  await Notifications.setNotificationChannelAsync("promotion", {
+    name: "Promotions & Discounts",
+    importance: Notifications.AndroidImportance.DEFAULT,
+    lightColor: "#FF9800",
+    sound: "default",
+    vibrationPattern: [0, 150, 150, 150],
+  });
 }
 
 function getProjectId() {
@@ -106,10 +124,14 @@ export function clearNotificationSubscription(subscription) {
 }
 
 export function handleNotificationNavigation(navigationRef, response) {
-  const data = response?.notification?.request?.content?.data || {};
-  const targetRoute = data?.screen || data?.route || "";
-  let params = data?.params || {};
+  const notification = response?.notification?.request?.content;
+  const data = notification?.data || {};
 
+  let targetRoute = data?.screen || data?.route || "";
+  let params = data?.params || {};
+  const details = data?.details || {};
+
+  // Parse string params
   if (typeof params === "string") {
     try {
       params = JSON.parse(params);
@@ -118,6 +140,30 @@ export function handleNotificationNavigation(navigationRef, response) {
     }
   }
 
+  // Parse details
+  let parsedDetails = details;
+  if (typeof details === "string") {
+    try {
+      parsedDetails = JSON.parse(details);
+    } catch {
+      parsedDetails = {};
+    }
+  }
+
+  // Parse actions if present
+  let actions = [];
+  if (data?.actions) {
+    try {
+      actions =
+        typeof data.actions === "string"
+          ? JSON.parse(data.actions)
+          : data.actions;
+    } catch {
+      actions = [];
+    }
+  }
+
+  // Extract fallback params from data if params is empty
   if (
     !params ||
     typeof params !== "object" ||
@@ -131,14 +177,105 @@ export function handleNotificationNavigation(navigationRef, response) {
       categoryIdentifier,
       subtitle,
       sound,
+      actions: _,
+      details: __,
       ...rest
     } = data || {};
     params = rest;
   }
 
-  if (!navigationRef?.isReady?.()) return;
+  // Merge details into params for backward compatibility
+  params = {
+    ...params,
+    ...parsedDetails,
+    notificationId: data?.notificationId,
+    timestamp: data?.timestamp,
+  };
+
+  if (!navigationRef?.isReady?.()) {
+    return;
+  }
 
   if (targetRoute) {
     navigationRef.navigate(targetRoute, params);
   }
+}
+
+/**
+ * Handle notification action (e.g., button clicks)
+ */
+export function handleNotificationAction(navigationRef, response, actionId) {
+  handleNotificationNavigation(navigationRef, response);
+}
+
+/**
+ * Create notification actions for order updates
+ */
+export function createOrderNotificationActions(orderId) {
+  return [
+    {
+      id: "view_order",
+      title: "View Order",
+      icon: "visibility",
+    },
+    {
+      id: "track",
+      title: "Track",
+      icon: "location-on",
+    },
+  ];
+}
+
+/**
+ * Create notification actions for promotions
+ */
+export function createPromoNotificationActions(promoCode) {
+  return [
+    {
+      id: "view_promo",
+      title: "View Promo",
+      icon: "local-offer",
+    },
+    {
+      id: "copy_code",
+      title: "Copy Code",
+      icon: "content-copy",
+    },
+  ];
+}
+
+/**
+ * Create notification actions for product discounts
+ */
+export function createProductNotificationActions(productId) {
+  return [
+    {
+      id: "view_product",
+      title: "View Product",
+      icon: "shopping-bag",
+    },
+    {
+      id: "add_to_cart",
+      title: "Add to Cart",
+      icon: "add-shopping-cart",
+    },
+  ];
+}
+
+/**
+ * Get notification channel ID based on notification type
+ */
+export function getNotificationChannelId(notificationType) {
+  const type = String(notificationType || "").toLowerCase();
+  if (type.includes("order")) return "order";
+  if (type.includes("promo") || type.includes("promotion")) return "promotion";
+  return "default";
+}
+
+/**
+ * Format notification badge count
+ */
+export function getNotificationBadge(count) {
+  const num = Number(count || 0);
+  return num > 0 ? Math.min(num, 99) : 0;
 }

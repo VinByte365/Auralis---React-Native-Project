@@ -2,7 +2,41 @@ const { Expo } = require("expo-server-sdk");
 const User = require("../models/userModel");
 const expo = new Expo();
 
-async function sendPushToUser(pushToken, title = "Auralis", body, data = {}) {
+/**
+ * Generate unique notification ID
+ */
+function generateNotificationId() {
+  return `notif_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+}
+
+/**
+ * Build notification data payload with all details
+ */
+function buildNotificationData({
+  screen,
+  params = {},
+  details = {},
+  actions = [],
+  notificationId = null,
+  timestamp = null,
+} = {}) {
+  return {
+    screen: screen || "NotificationDetails",
+    params: typeof params === "string" ? params : JSON.stringify(params),
+    details: typeof details === "string" ? details : JSON.stringify(details),
+    actions: Array.isArray(actions) ? JSON.stringify(actions) : "[]",
+    notificationId: notificationId || generateNotificationId(),
+    timestamp: timestamp || new Date().toISOString(),
+  };
+}
+
+async function sendPushToUser(
+  pushToken,
+  title = "Auralis",
+  body,
+  data = {},
+  options = {},
+) {
   const token = String(pushToken || "").trim();
   if (!token) {
     return { sent: false, reason: "missing_push_token" };
@@ -12,13 +46,23 @@ async function sendPushToUser(pushToken, title = "Auralis", body, data = {}) {
     return { sent: false, reason: "invalid_expo_push_token", token };
   }
 
+  const {
+    sound = "default",
+    badge = 1,
+    priority = "high",
+    mutableContent = true,
+  } = options;
+
   const message = [
     {
       to: token,
-      sound: "default",
+      sound,
+      badge,
       title,
       body,
-      data,
+      data: buildNotificationData(data),
+      priority,
+      mutableContent,
     },
   ];
 
@@ -33,6 +77,7 @@ async function sendPushToUser(pushToken, title = "Auralis", body, data = {}) {
   return {
     sent: true,
     tickets,
+    notificationId: data?.notificationId || generateNotificationId(),
   };
 }
 
@@ -48,6 +93,7 @@ async function sendPromotionNotificationToUsers({
   body = "A new discount is available.",
   data = {},
   userFilter = {},
+  options = {},
 } = {}) {
   const users = await User.find({
     role: { $ne: "admin" },
@@ -68,12 +114,22 @@ async function sendPromotionNotificationToUsers({
     };
   }
 
+  const {
+    sound = "default",
+    badge = 1,
+    priority = "high",
+    mutableContent = true,
+  } = options;
+
   const messages = uniqueTokens.map((token) => ({
     to: token,
-    sound: "default",
+    sound,
+    badge,
     title,
     body,
-    data,
+    data: buildNotificationData(data),
+    priority,
+    mutableContent,
   }));
 
   const chunks = expo.chunkPushNotifications(messages);
@@ -89,10 +145,13 @@ async function sendPromotionNotificationToUsers({
     successfulTokens: uniqueTokens.length,
     deduplicatedTokens: validTokens.length - uniqueTokens.length,
     tickets,
+    notificationId: data?.notificationId || generateNotificationId(),
   };
 }
 
 module.exports = {
   sendPushToUser,
   sendPromotionNotificationToUsers,
+  buildNotificationData,
+  generateNotificationId,
 };
