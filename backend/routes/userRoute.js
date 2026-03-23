@@ -29,6 +29,11 @@ router
   );
 
 router
+  .route("/user/push-token")
+  .post(authMiddleware.verifyToken, userController.addPushToken)
+  .delete(authMiddleware.verifyToken, userController.removePushToken);
+
+router
   .route("/user/:userId")
   .get(
     authMiddleware.verifyToken,
@@ -58,10 +63,5 @@ router
 router
   .route("/customer/home")
   .get(authMiddleware.verifyToken, userController.userHomeData);
-
-router
-  .route("/user/push-token")
-  .post(authMiddleware.verifyToken, userController.addPushToken)
-  .delete(authMiddleware.verifyToken, userController.removePushToken);
 
 module.exports = router;
