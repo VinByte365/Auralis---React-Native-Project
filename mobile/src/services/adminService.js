@@ -1,4 +1,6 @@
 import axiosInstance from "../helper/axiosInstance";
+import { API_URL } from "../constants/config";
+import { getToken } from "../utils/token";
 import { unwrapResult } from "./apiHelpers";
 
 function toQueryParams(params = {}) {
@@ -44,6 +46,63 @@ function buildProductFormData(payload = {}, images = []) {
   });
 
   return formData;
+}
+
+async function uploadAdminProductMultipart({
+  method,
+  path,
+  payload = {},
+  images = [],
+  timeoutMs = 120000,
+}) {
+  const token = await getToken();
+  const formData = buildProductFormData(payload, images);
+  const controller = new AbortController();
+  const timeoutHandle = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(`${API_URL}${path}`, {
+      method,
+      headers: {
+        Accept: "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: formData,
+      signal: controller.signal,
+    });
+
+    const responseData = await response.json().catch(() => null);
+
+    if (!response.ok) {
+      throw new Error(
+        responseData?.message ||
+          responseData?.error ||
+          `Request failed (${response.status})`,
+      );
+    }
+
+    if (!responseData?.success) {
+      throw new Error(
+        responseData?.message || responseData?.error || "Request failed",
+      );
+    }
+
+    return responseData.result ?? responseData;
+  } catch (error) {
+    console.log("[PRODUCT][UPLOAD][FETCH_ERROR]", {
+      method,
+      path,
+      message: error?.message,
+      name: error?.name,
+    });
+
+    if (error?.name === "AbortError") {
+      throw new Error("Upload timeout. Please try again.");
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutHandle);
+  }
 }
 
 export const fetchAdminDashboardSummary = async () => {
@@ -193,12 +252,23 @@ export const fetchAdminProducts = async (params = {}) => {
 };
 
 export const createAdminProduct = async (payload = {}, images = []) => {
-  const response = await axiosInstance.post(
-    "/api/v1/product",
-    buildProductFormData(payload, images),
-  );
+  console.log("[PRODUCT][CREATE][REQUEST]", {
+    imageCount: Array.isArray(images) ? images.length : 0,
+    payload,
+  });
 
-  return unwrapResult(response);
+  const result = await uploadAdminProductMultipart({
+    method: "POST",
+    path: "/api/v1/product",
+    payload,
+    images,
+  });
+
+  console.log("[PRODUCT][CREATE][SUCCESS]", {
+    imageCount: Array.isArray(images) ? images.length : 0,
+  });
+
+  return result;
 };
 
 export const updateAdminProduct = async (
@@ -206,12 +276,25 @@ export const updateAdminProduct = async (
   payload = {},
   images = [],
 ) => {
-  const response = await axiosInstance.put(
-    `/api/v1/product/${productId}`,
-    buildProductFormData(payload, images),
-  );
+  console.log("[PRODUCT][UPDATE][REQUEST]", {
+    productId,
+    imageCount: Array.isArray(images) ? images.length : 0,
+    payload,
+  });
 
-  return unwrapResult(response);
+  const result = await uploadAdminProductMultipart({
+    method: "PUT",
+    path: `/api/v1/product/${productId}`,
+    payload,
+    images,
+  });
+
+  console.log("[PRODUCT][UPDATE][SUCCESS]", {
+    productId,
+    imageCount: Array.isArray(images) ? images.length : 0,
+  });
+
+  return result;
 };
 
 export const softDeleteAdminProduct = async (productId) => {

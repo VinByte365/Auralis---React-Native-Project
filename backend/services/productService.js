@@ -214,13 +214,18 @@ const update = async (request = {}) => {
     newImages = Array.isArray(temp) ? temp : [temp];
   }
 
+  const safeBody = {
+    ...(request.body || {}),
+  };
+  delete safeBody.images;
+
   const updateQuery = {
-    ...request.body,
+    ...safeBody,
     deletedAt: null,
   };
 
-  if (request.body.discountScopes) {
-    updateQuery.discountScopes = String(request.body.discountScopes).split(",");
+  if (safeBody.discountScopes) {
+    updateQuery.discountScopes = String(safeBody.discountScopes).split(",");
   }
   if (newImages.length > 0) {
     updateQuery.$push = {
@@ -250,8 +255,8 @@ const update = async (request = {}) => {
   );
 
   const isDiscountMutation =
-    Object.prototype.hasOwnProperty.call(request.body || {}, "salePrice") ||
-    Object.prototype.hasOwnProperty.call(request.body || {}, "saleActive");
+    Object.prototype.hasOwnProperty.call(safeBody, "salePrice") ||
+    Object.prototype.hasOwnProperty.call(safeBody, "saleActive");
 
   if (isDiscountMutation) {
     await notifyPromotionForProduct(product, "promotion_update");

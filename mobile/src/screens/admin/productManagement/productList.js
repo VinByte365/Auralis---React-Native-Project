@@ -67,6 +67,43 @@ function formatCurrency(value) {
   return `PHP ${amount.toLocaleString()}`;
 }
 
+function validateProductForm(form) {
+  const errors = {};
+  const price = Number(form?.price);
+  const stockQuantity = Number(form?.stockQuantity);
+
+  if (!String(form?.name || "").trim())
+    errors.name = "Product name is required.";
+  if (!String(form?.sku || "").trim()) errors.sku = "SKU is required.";
+  if (!String(form?.barcode || "").trim())
+    errors.barcode = "Barcode is required.";
+  if (!String(form?.barcodeType || "").trim()) {
+    errors.barcodeType = "Please select a barcode type.";
+  }
+  if (!String(form?.category || "").trim()) {
+    errors.category = "Please select a category.";
+  }
+
+  if (!String(form?.price || "").trim()) {
+    errors.price = "Price is required.";
+  } else if (Number.isNaN(price) || price <= 0) {
+    errors.price = "Price must be greater than 0.";
+  }
+
+  if (!String(form?.stockQuantity || "").trim()) {
+    errors.stockQuantity = "Stock quantity is required.";
+  } else if (Number.isNaN(stockQuantity) || stockQuantity < 0) {
+    errors.stockQuantity = "Stock quantity cannot be negative.";
+  }
+
+  if (!String(form?.unit || "").trim()) errors.unit = "Please select a unit.";
+  if (String(form?.description || "").trim().length > 500) {
+    errors.description = "Description must be 500 characters or less.";
+  }
+
+  return errors;
+}
+
 export default function ProductList() {
   const navigation = useNavigation();
   const dispatch = useDispatch();
@@ -74,8 +111,15 @@ export default function ProductList() {
   const [archiveTarget, setArchiveTarget] = useState(null);
   const [formVisible, setFormVisible] = useState(false);
   const [editingProductId, setEditingProductId] = useState(null);
+  const [existingImagesCount, setExistingImagesCount] = useState(0);
   const [productForm, setProductForm] = useState(DEFAULT_PRODUCT_FORM);
+  const [formErrors, setFormErrors] = useState({});
   const [selectedImages, setSelectedImages] = useState([]);
+  const [snackbar, setSnackbar] = useState({
+    visible: false,
+    message: "",
+    type: "success",
+  });
 
   const { list, loading } = useSelector((state) => state.admin.products);
   const categoryList = useSelector(
@@ -101,8 +145,27 @@ export default function ProductList() {
 
   const resetProductForm = () => {
     setEditingProductId(null);
+    setExistingImagesCount(0);
     setProductForm(DEFAULT_PRODUCT_FORM);
+    setFormErrors({});
     setSelectedImages([]);
+  };
+
+  const showSnackbar = (message, type = "success") => {
+    setSnackbar({ visible: true, message, type });
+    setTimeout(() => {
+      setSnackbar((prev) => ({ ...prev, visible: false }));
+    }, 2500);
+  };
+
+  const updateProductFormField = (field, value) => {
+    setProductForm((prev) => ({ ...prev, [field]: value }));
+    setFormErrors((prev) => {
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
   };
 
   const closeProductForm = () => {
@@ -117,6 +180,9 @@ export default function ProductList() {
 
   const openEditForm = (product) => {
     setEditingProductId(product?._id || null);
+    setExistingImagesCount(
+      Array.isArray(product?.images) ? product.images.length : 0,
+    );
     setProductForm({
       name: String(product?.name || ""),
       sku: String(product?.sku || ""),
@@ -153,7 +219,15 @@ export default function ProductList() {
 
       if (result.canceled) return;
       const assets = result.assets || [];
-      setSelectedImages((prev) => [...prev, ...assets].slice(0, 5));
+      setSelectedImages((prev) => {
+        const next = [...prev, ...assets].slice(0, 5);
+        console.log("[PRODUCT_FORM][IMAGES_PICKED]", {
+          source: "gallery",
+          added: assets.length,
+          totalSelected: next.length,
+        });
+        return next;
+      });
     } catch {
       Alert.alert("Upload failed", "Unable to open gallery. Please try again.");
     }
@@ -175,7 +249,15 @@ export default function ProductList() {
       if (result.canceled) return;
       const asset = result.assets?.[0];
       if (!asset) return;
-      setSelectedImages((prev) => [...prev, asset].slice(0, 5));
+      setSelectedImages((prev) => {
+        const next = [...prev, asset].slice(0, 5);
+        console.log("[PRODUCT_FORM][IMAGES_PICKED]", {
+          source: "camera",
+          added: 1,
+          totalSelected: next.length,
+        });
+        return next;
+      });
     } catch {
       Alert.alert(
         "Camera unavailable",
@@ -185,6 +267,18 @@ export default function ProductList() {
   };
 
   const submitProductForm = async () => {
+    const errors = validateProductForm(productForm);
+    const hasExistingImages = existingImagesCount > 0;
+    if (!hasExistingImages && selectedImages.length === 0) {
+      errors.images = "Please upload at least one product image.";
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      showSnackbar("Please correct the highlighted fields.", "error");
+      return;
+    }
+
     const payload = {
       name: productForm.name.trim(),
       sku: productForm.sku.trim(),
@@ -197,30 +291,57 @@ export default function ProductList() {
       description: productForm.description.trim(),
     };
 
-    if (
-      !payload.name ||
-      !payload.sku ||
-      !payload.barcode ||
-      !payload.category ||
-      Number.isNaN(payload.price) ||
-      Number.isNaN(payload.stockQuantity)
-    ) {
-      return;
-    }
+    console.log("[PRODUCT_FORM][SUBMIT]", {
+      mode: editingProductId ? "update" : "create",
+      productId: editingProductId || null,
+      imageCount: Array.isArray(selectedImages) ? selectedImages.length : 0,
+      imagesPreview: Array.isArray(selectedImages)
+        ? selectedImages.map((image) => ({
+            uri: image?.uri,
+            type: image?.type || image?.mimeType,
+            name: image?.fileName || image?.name,
+          }))
+        : [],
+    });
 
-    if (editingProductId) {
-      await dispatch(
-        editProduct({
-          productId: editingProductId,
-          payload,
-          images: selectedImages,
-        }),
-      );
-    } else {
-      await dispatch(createProduct({ payload, images: selectedImages }));
-    }
+    try {
+      const action = editingProductId
+        ? await dispatch(
+            editProduct({
+              productId: editingProductId,
+              payload,
+              images: selectedImages,
+            }),
+          )
+        : await dispatch(createProduct({ payload, images: selectedImages }));
 
-    closeProductForm();
+      console.log("[PRODUCT_FORM][RESULT]", {
+        requestStatus: action?.meta?.requestStatus,
+        payload: action?.payload,
+        error: action?.error,
+      });
+
+      if (action?.meta?.requestStatus === "fulfilled") {
+        showSnackbar(
+          editingProductId
+            ? "Product updated successfully."
+            : "Product created successfully.",
+          "success",
+        );
+        closeProductForm();
+      } else {
+        showSnackbar(
+          action?.payload?.error || "Unable to save product. Please try again.",
+          "error",
+        );
+      }
+    } catch (error) {
+      console.log("[PRODUCT_FORM][CATCH_ERROR]", {
+        message: error?.message,
+        stack: error?.stack,
+      });
+      showSnackbar("Unable to save product. Please try again.", "error");
+    }
   };
 
   const renderProduct = ({ item }) => {
@@ -316,9 +437,18 @@ export default function ProductList() {
         message={`Move "${archiveTarget?.name}" to recycle bin?`}
         confirmLabel="Archive"
         onCancel={() => setArchiveTarget(null)}
-        onConfirm={() => {
+        onConfirm={async () => {
           if (archiveTarget?._id) {
-            dispatch(archiveProduct(archiveTarget._id));
+            const action = await dispatch(archiveProduct(archiveTarget._id));
+            if (action?.meta?.requestStatus === "fulfilled") {
+              showSnackbar("Product archived successfully.", "success");
+            } else {
+              showSnackbar(
+                action?.payload?.error ||
+                  "Unable to archive product. Please try again.",
+                "error",
+              );
+            }
           }
           setArchiveTarget(null);
         }}
@@ -343,33 +473,38 @@ export default function ProductList() {
             >
               <Text style={styles.fieldLabel}>Product Name</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, formErrors.name && styles.inputError]}
                 placeholder="Enter product name"
                 value={productForm.name}
-                onChangeText={(value) =>
-                  setProductForm((prev) => ({ ...prev, name: value }))
-                }
+                onChangeText={(value) => updateProductFormField("name", value)}
               />
+              {!!formErrors.name && (
+                <Text style={styles.fieldError}>{formErrors.name}</Text>
+              )}
 
               <Text style={styles.fieldLabel}>SKU</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, formErrors.sku && styles.inputError]}
                 placeholder="Enter SKU"
                 value={productForm.sku}
-                onChangeText={(value) =>
-                  setProductForm((prev) => ({ ...prev, sku: value }))
-                }
+                onChangeText={(value) => updateProductFormField("sku", value)}
               />
+              {!!formErrors.sku && (
+                <Text style={styles.fieldError}>{formErrors.sku}</Text>
+              )}
 
               <Text style={styles.fieldLabel}>Barcode</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, formErrors.barcode && styles.inputError]}
                 placeholder="Enter barcode"
                 value={productForm.barcode}
                 onChangeText={(value) =>
-                  setProductForm((prev) => ({ ...prev, barcode: value }))
+                  updateProductFormField("barcode", value)
                 }
               />
+              {!!formErrors.barcode && (
+                <Text style={styles.fieldError}>{formErrors.barcode}</Text>
+              )}
 
               <Text style={styles.fieldLabel}>Barcode Type</Text>
               <View style={styles.optionWrap}>
@@ -378,20 +513,21 @@ export default function ProductList() {
                     key={option}
                     style={[
                       styles.optionBtn,
+                      formErrors.barcodeType && styles.optionBtnError,
                       productForm.barcodeType === option &&
                         styles.optionBtnActive,
                     ]}
                     onPress={() =>
-                      setProductForm((prev) => ({
-                        ...prev,
-                        barcodeType: option,
-                      }))
+                      updateProductFormField("barcodeType", option)
                     }
                   >
                     <Text style={styles.optionText}>{option}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
+              {!!formErrors.barcodeType && (
+                <Text style={styles.fieldError}>{formErrors.barcodeType}</Text>
+              )}
 
               <Text style={styles.fieldLabel}>Category</Text>
               <View style={styles.optionWrap}>
@@ -400,14 +536,12 @@ export default function ProductList() {
                     key={String(category?._id)}
                     style={[
                       styles.optionBtn,
+                      formErrors.category && styles.optionBtnError,
                       productForm.category === String(category?._id) &&
                         styles.optionBtnActive,
                     ]}
                     onPress={() =>
-                      setProductForm((prev) => ({
-                        ...prev,
-                        category: String(category?._id),
-                      }))
+                      updateProductFormField("category", String(category?._id))
                     }
                   >
                     <Text style={styles.optionText}>
@@ -416,28 +550,40 @@ export default function ProductList() {
                   </TouchableOpacity>
                 ))}
               </View>
+              {!!formErrors.category && (
+                <Text style={styles.fieldError}>{formErrors.category}</Text>
+              )}
 
               <Text style={styles.fieldLabel}>Price</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, formErrors.price && styles.inputError]}
                 placeholder="0.00"
                 keyboardType="decimal-pad"
                 value={productForm.price}
-                onChangeText={(value) =>
-                  setProductForm((prev) => ({ ...prev, price: value }))
-                }
+                onChangeText={(value) => updateProductFormField("price", value)}
               />
+              {!!formErrors.price && (
+                <Text style={styles.fieldError}>{formErrors.price}</Text>
+              )}
 
               <Text style={styles.fieldLabel}>Stock Quantity</Text>
               <TextInput
-                style={styles.input}
+                style={[
+                  styles.input,
+                  formErrors.stockQuantity && styles.inputError,
+                ]}
                 placeholder="0"
                 keyboardType="number-pad"
                 value={productForm.stockQuantity}
                 onChangeText={(value) =>
-                  setProductForm((prev) => ({ ...prev, stockQuantity: value }))
+                  updateProductFormField("stockQuantity", value)
                 }
               />
+              {!!formErrors.stockQuantity && (
+                <Text style={styles.fieldError}>
+                  {formErrors.stockQuantity}
+                </Text>
+              )}
 
               <Text style={styles.fieldLabel}>Unit</Text>
               <View style={styles.optionWrap}>
@@ -446,31 +592,43 @@ export default function ProductList() {
                     key={option}
                     style={[
                       styles.optionBtn,
+                      formErrors.unit && styles.optionBtnError,
                       productForm.unit === option && styles.optionBtnActive,
                     ]}
-                    onPress={() =>
-                      setProductForm((prev) => ({ ...prev, unit: option }))
-                    }
+                    onPress={() => updateProductFormField("unit", option)}
                   >
                     <Text style={styles.optionText}>{option}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
+              {!!formErrors.unit && (
+                <Text style={styles.fieldError}>{formErrors.unit}</Text>
+              )}
 
               <Text style={styles.fieldLabel}>Description</Text>
               <TextInput
-                style={[styles.input, styles.textArea]}
+                style={[
+                  styles.input,
+                  styles.textArea,
+                  formErrors.description && styles.inputError,
+                ]}
                 multiline
                 numberOfLines={4}
                 placeholder="Optional description"
                 value={productForm.description}
                 onChangeText={(value) =>
-                  setProductForm((prev) => ({ ...prev, description: value }))
+                  updateProductFormField("description", value)
                 }
               />
+              {!!formErrors.description && (
+                <Text style={styles.fieldError}>{formErrors.description}</Text>
+              )}
 
               <Text style={styles.fieldLabel}>
                 Images ({selectedImages.length}/5)
+                {editingProductId && existingImagesCount > 0
+                  ? ` • Existing: ${existingImagesCount}`
+                  : ""}
               </Text>
               <View style={styles.mediaRow}>
                 <TouchableOpacity
@@ -486,6 +644,9 @@ export default function ProductList() {
                   <Text style={styles.mediaBtnText}>Use Camera</Text>
                 </TouchableOpacity>
               </View>
+              {!!formErrors.images && (
+                <Text style={styles.fieldError}>{formErrors.images}</Text>
+              )}
             </ScrollView>
 
             <View style={styles.modalActions}>
@@ -507,6 +668,19 @@ export default function ProductList() {
           </View>
         </View>
       </Modal>
+
+      {snackbar.visible ? (
+        <View
+          style={[
+            styles.snackbar,
+            snackbar.type === "error"
+              ? styles.snackbarError
+              : styles.snackbarSuccess,
+          ]}
+        >
+          <Text style={styles.snackbarText}>{snackbar.message}</Text>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -638,6 +812,15 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
     color: COLORS.textPrimary,
   },
+  inputError: {
+    borderColor: COLORS.danger,
+  },
+  fieldError: {
+    marginTop: -SPACING.xs,
+    marginBottom: SPACING.sm,
+    fontSize: 12,
+    color: COLORS.danger,
+  },
   textArea: {
     minHeight: 90,
     textAlignVertical: "top",
@@ -659,6 +842,9 @@ const styles = StyleSheet.create({
   optionBtnActive: {
     borderColor: COLORS.primary,
     backgroundColor: COLORS.primaryLight + "30",
+  },
+  optionBtnError: {
+    borderColor: COLORS.danger,
   },
   optionText: {
     fontSize: 12,
@@ -706,6 +892,27 @@ const styles = StyleSheet.create({
   },
   saveText: {
     color: COLORS.textInverse,
+    fontWeight: FONT.semibold,
+  },
+  snackbar: {
+    position: "absolute",
+    left: SPACING.lg,
+    right: SPACING.lg,
+    bottom: SPACING.lg,
+    borderRadius: RADIUS.md,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    ...SHADOW.sm,
+  },
+  snackbarSuccess: {
+    backgroundColor: COLORS.success,
+  },
+  snackbarError: {
+    backgroundColor: COLORS.danger,
+  },
+  snackbarText: {
+    color: COLORS.textInverse,
+    fontSize: 13,
     fontWeight: FONT.semibold,
   },
 });

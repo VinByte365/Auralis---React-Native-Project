@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Alert,
+  Dimensions,
   Image,
   Modal,
   ScrollView,
@@ -12,13 +13,31 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import Carousel from "react-native-reanimated-carousel";
 import useProduct from "../../hooks/user/useProduct";
 import ProductActionBar from "../../components/ProductActionBar";
 import ProductReviewSection from "../../components/ProductReviewSection";
 import ProductReviewEditor from "../../components/ProductReviewEditor";
 const productImagePlaceholder = require("../../../assets/home/3.png");
+const SCREEN_WIDTH = Dimensions.get("window").width;
+
+function resolveImageUri(imageEntry) {
+  if (!imageEntry) return null;
+  if (typeof imageEntry === "string") return imageEntry;
+  if (typeof imageEntry !== "object") return null;
+
+  return (
+    imageEntry.uri ||
+    imageEntry.url ||
+    imageEntry.secure_url ||
+    imageEntry.imageUrl ||
+    imageEntry.image ||
+    null
+  );
+}
 
 export default function ProductScreen({ route, navigation }) {
+  const [imageCarouselIndex, setImageCarouselIndex] = useState(0);
   const productId = route?.params?.productId;
   const {
     userId,
@@ -60,6 +79,23 @@ export default function ProductScreen({ route, navigation }) {
     hasDiscount && basePrice > 0
       ? Math.round(((basePrice - salePrice) / basePrice) * 100)
       : 0;
+
+  const productImages = useMemo(() => {
+    const normalized = Array.isArray(productDetails?.images)
+      ? productDetails.images
+          .map((item) => ({ uri: resolveImageUri(item) }))
+          .filter((item) => Boolean(item?.uri))
+      : [];
+
+    return normalized.length > 0 ? normalized : [{ uri: null }];
+  }, [productDetails?.images]);
+
+  useEffect(() => {
+    setImageCarouselIndex(0);
+  }, [productId]);
+
+  const carouselWidth = SCREEN_WIDTH - 32;
+  const carouselHeight = carouselWidth / 1.15;
 
   if (!productId) {
     return (
@@ -106,17 +142,42 @@ export default function ProductScreen({ route, navigation }) {
         {productDetails ? (
           <>
             <View style={styles.imageCard}>
-              <Image
-                source={
-                  productDetails?.images?.[0]?.url
-                    ? { uri: productDetails.images[0].url }
-                    : productImagePlaceholder
-                }
-                style={styles.productImage}
-                resizeMode={
-                  productDetails?.images?.[0]?.url ? "cover" : "contain"
-                }
+              <Carousel
+                width={carouselWidth}
+                height={carouselHeight}
+                data={productImages}
+                loop={productImages.length > 1}
+                pagingEnabled
+                snapEnabled
+                onSnapToItem={(index) => setImageCarouselIndex(index)}
+                renderItem={({ item }) => {
+                  const imageUrl = item?.uri;
+                  return (
+                    <Image
+                      source={
+                        imageUrl ? { uri: imageUrl } : productImagePlaceholder
+                      }
+                      style={styles.productImage}
+                      resizeMode={imageUrl ? "cover" : "contain"}
+                    />
+                  );
+                }}
               />
+
+              {productImages.length > 1 ? (
+                <View style={styles.carouselDots}>
+                  {productImages.map((_, index) => (
+                    <View
+                      key={`dot-${index}`}
+                      style={[
+                        styles.carouselDot,
+                        imageCarouselIndex === index &&
+                          styles.carouselDotActive,
+                      ]}
+                    />
+                  ))}
+                </View>
+              ) : null}
             </View>
 
             <Text style={styles.productName}>{productDetails.name}</Text>
@@ -240,15 +301,23 @@ export default function ProductScreen({ route, navigation }) {
                         activeOpacity={0.7}
                       >
                         <View style={styles.suggestionImageContainer}>
-                          <Image
-                            source={
-                              item?.images?.[0]?.url
-                                ? { uri: item.images[0].url }
-                                : productImagePlaceholder
-                            }
-                            style={styles.suggestionImage}
-                            resizeMode="contain"
-                          />
+                          {(() => {
+                            const suggestionImageUri = resolveImageUri(
+                              item?.images?.[0],
+                            );
+
+                            return (
+                              <Image
+                                source={
+                                  suggestionImageUri
+                                    ? { uri: suggestionImageUri }
+                                    : productImagePlaceholder
+                                }
+                                style={styles.suggestionImage}
+                                resizeMode="contain"
+                              />
+                            );
+                          })()}
                         </View>
                         <Text style={styles.suggestionName} numberOfLines={2}>
                           {item.name}
@@ -398,6 +467,26 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
     backgroundColor: "#f5f5f5",
+  },
+  carouselDots: {
+    position: "absolute",
+    bottom: 10,
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  carouselDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.7)",
+    marginHorizontal: 3,
+  },
+  carouselDotActive: {
+    width: 16,
+    backgroundColor: "#fff",
   },
   productName: {
     fontSize: 20,

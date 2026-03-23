@@ -5,10 +5,76 @@ import {
   StyleSheet,
   TouchableOpacity,
   Image,
+  ScrollView,
 } from "react-native";
 import React from "react";
 
 const productImagePlaceholder = require("../../assets/home/3.png");
+
+function ProductImageCarousel({ images }) {
+  const [currentIndex, setCurrentIndex] = React.useState(0);
+  const [containerWidth, setContainerWidth] = React.useState(0);
+
+  const imageUris = React.useMemo(() => {
+    const normalized = Array.isArray(images)
+      ? images
+          .map((item) => item?.uri || item?.url || null)
+          .filter((uri) => Boolean(uri))
+      : [];
+
+    return normalized.length > 0 ? normalized : [null];
+  }, [images]);
+
+  const resolvedWidth = containerWidth || 160;
+
+  const handleMomentumEnd = (event) => {
+    if (!resolvedWidth) return;
+    const offsetX = event?.nativeEvent?.contentOffset?.x || 0;
+    const nextIndex = Math.round(offsetX / resolvedWidth);
+    setCurrentIndex(nextIndex);
+  };
+
+  return (
+    <View
+      style={styles.carouselContainer}
+      onLayout={({ nativeEvent }) => {
+        const width = nativeEvent?.layout?.width || 0;
+        if (width && width !== containerWidth) setContainerWidth(width);
+      }}
+    >
+      <ScrollView
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onMomentumScrollEnd={handleMomentumEnd}
+        scrollEventThrottle={16}
+      >
+        {imageUris.map((uri, index) => (
+          <Image
+            key={`product-image-${index}`}
+            source={uri ? { uri } : productImagePlaceholder}
+            style={[styles.productImageAsset, { width: resolvedWidth }]}
+            resizeMode={uri ? "cover" : "contain"}
+          />
+        ))}
+      </ScrollView>
+
+      {imageUris.length > 1 ? (
+        <View style={styles.carouselDots}>
+          {imageUris.map((_, index) => (
+            <View
+              key={`dot-${index}`}
+              style={[
+                styles.carouselDot,
+                currentIndex === index && styles.carouselDotActive,
+              ]}
+            />
+          ))}
+        </View>
+      ) : null}
+    </View>
+  );
+}
 
 export default function ProductCard({ products, handleClick }) {
   const renderProduct = ({ item }) => {
@@ -28,19 +94,7 @@ export default function ProductCard({ products, handleClick }) {
         onPress={() => handleClick?.(item._id)}
       >
         <View style={styles.productImage}>
-          {item.images?.[0]?.url ? (
-            <Image
-              source={{ uri: item.images[0].url }}
-              style={styles.productImageAsset}
-              resizeMode="cover"
-            />
-          ) : (
-            <Image
-              source={productImagePlaceholder}
-              style={styles.productImageAsset}
-              resizeMode="contain"
-            />
-          )}
+          <ProductImageCarousel images={item?.images} />
           {hasDiscount ? (
             <View style={styles.discountBadge}>
               <Text style={styles.discountBadgeText}>-{discountPercent}%</Text>
@@ -112,10 +166,34 @@ const styles = StyleSheet.create({
     borderBottomColor: "#f0f0f0",
     overflow: "hidden",
   },
-  productImageAsset: {
+  carouselContainer: {
     width: "100%",
     height: "100%",
+  },
+  productImageAsset: {
+    minWidth: 1,
+    height: "100%",
     backgroundColor: "#f5f5f5",
+  },
+  carouselDots: {
+    position: "absolute",
+    bottom: 6,
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  carouselDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 999,
+    marginHorizontal: 2,
+    backgroundColor: "rgba(255,255,255,0.75)",
+  },
+  carouselDotActive: {
+    width: 14,
+    backgroundColor: "#fff",
   },
   productInfo: {
     padding: 12,
