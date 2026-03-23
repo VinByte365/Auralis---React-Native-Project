@@ -117,7 +117,9 @@ export default function ProductCard({ products, handleClick }) {
               ) : null}
             </View>
             <View style={styles.ratingContainer}>
-              <Text style={styles.ratingText}>{item.unit || "pc"}</Text>
+              <Text style={styles.ratingText}>
+                {item?.stockQuantity ?? 0} stock
+              </Text>
             </View>
           </View>
           <Text style={styles.soldText}>

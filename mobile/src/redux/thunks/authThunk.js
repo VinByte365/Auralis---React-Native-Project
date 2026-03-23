@@ -3,7 +3,6 @@ import * as authService from "../../services/authService";
 import * as googleAuthService from "../../services/googleAuthService";
 import { getErrorMessage } from "../../services/apiHelpers";
 import { getToken, removeToken, storeToken } from "../../utils/token";
-import { removePushToken } from "../../services/userService";
 
 export const login = createAsyncThunk(
   "auth/login",
@@ -57,7 +56,6 @@ export const hydrateSession = createAsyncThunk(
 
 export const logout = createAsyncThunk("auth/logout", async (_, thunkAPI) => {
   try {
-    await removePushToken();
     await authService.logout();
   } catch {
   } finally {

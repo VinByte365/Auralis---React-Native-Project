@@ -25,6 +25,9 @@ function Bootstrapper() {
   const foregroundSubscription = useRef(null);
   const responseSubscription = useRef(null);
   const syncedPushTokenRef = useRef("");
+  const pushTokenRef = useRef("");
+  const pushPlatformRef = useRef("unknown");
+  const syncIntervalRef = useRef(null);
   const authIdentity = String(user?._id || user?.userId || user?.id || "");
 
   useEffect(() => {
@@ -33,10 +36,57 @@ function Bootstrapper() {
 
     let mounted = true;
 
+    async function syncPushToken() {
+      if (!isLoggedIn || !mounted) return;
+
+      if (!pushTokenRef.current) {
+        const { token, platform, error } =
+          await registerForPushNotificationsAsync();
+
+        if (error) {
+          console.log("[PUSH][SYNC] token acquisition error", { error });
+        }
+
+        pushTokenRef.current = token || "";
+        pushPlatformRef.current = platform || "unknown";
+      }
+
+      const token = pushTokenRef.current;
+      const platform = pushPlatformRef.current;
+
+      if (!token) return;
+
+      const syncKey = `${authIdentity || "session"}:${token}`;
+      if (syncedPushTokenRef.current === syncKey) return;
+
+      try {
+        await registerPushToken(token, platform || "unknown");
+        syncedPushTokenRef.current = syncKey;
+        console.log("[PUSH][SYNC] token synced", {
+          authIdentity,
+          platform,
+        });
+      } catch (error) {
+        console.log("[PUSH][SYNC] token sync failed", {
+          authIdentity,
+          platform,
+          message: error?.message,
+          code: error?.code,
+        });
+      }
+    }
+
     async function setupNotifications() {
       try {
         const { token, platform, error } =
           await registerForPushNotificationsAsync();
+
+        if (error) {
+          console.log("[PUSH][SETUP] registration warning", { error });
+        }
+
+        pushTokenRef.current = token || "";
+        pushPlatformRef.current = platform || "unknown";
 
         if (!isLoggedIn) {
           syncedPushTokenRef.current = "";
@@ -56,11 +106,25 @@ function Bootstrapper() {
 
         // Push token registered
       } catch (notificationError) {
-        // Push setup error silently handled
+        console.log("[PUSH][SETUP] error", {
+          message: notificationError?.message,
+        });
       }
     }
 
     setupNotifications();
+
+    if (syncIntervalRef.current) {
+      clearInterval(syncIntervalRef.current);
+      syncIntervalRef.current = null;
+    }
+
+    if (isLoggedIn) {
+      syncPushToken();
+      syncIntervalRef.current = setInterval(() => {
+        syncPushToken();
+      }, 30000);
+    }
 
     foregroundSubscription.current = subscribeToForegroundNotifications(
       () => {},
@@ -74,6 +138,10 @@ function Bootstrapper() {
 
     return () => {
       mounted = false;
+      if (syncIntervalRef.current) {
+        clearInterval(syncIntervalRef.current);
+        syncIntervalRef.current = null;
+      }
       clearNotificationSubscription(foregroundSubscription.current);
       clearNotificationSubscription(responseSubscription.current);
     };

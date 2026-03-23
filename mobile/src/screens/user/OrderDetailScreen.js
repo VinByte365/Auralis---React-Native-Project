@@ -166,13 +166,13 @@ export default function OrderDetailScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.headerRow}>
+      {/* <View style={styles.headerRow}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Text style={styles.backText}>Back</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Order Details</Text>
         <View style={styles.headerSpacer} />
-      </View>
+      </View> */}
 
       <ScrollView
         style={styles.scroll}

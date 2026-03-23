@@ -37,25 +37,11 @@ import StatusChip from "../components/StatusChip";
 const DEFAULT_PRODUCT_FORM = {
   name: "",
   sku: "",
-  barcode: "",
-  barcodeType: "UPC",
   category: "",
   price: "",
   stockQuantity: "",
-  unit: "pc",
   description: "",
 };
-
-const UNIT_OPTIONS = ["pc", "pack", "kg", "g", "liter", "ml"];
-const BARCODE_OPTIONS = [
-  "UPC",
-  "EAN_13",
-  "EAN_8",
-  "ISBN_10",
-  "ISBN_13",
-  "CODE_128",
-  "QR",
-];
 
 const IMAGE_MEDIA_TYPE =
   ImagePicker.MediaType?.Images ||
@@ -75,11 +61,6 @@ function validateProductForm(form) {
   if (!String(form?.name || "").trim())
     errors.name = "Product name is required.";
   if (!String(form?.sku || "").trim()) errors.sku = "SKU is required.";
-  if (!String(form?.barcode || "").trim())
-    errors.barcode = "Barcode is required.";
-  if (!String(form?.barcodeType || "").trim()) {
-    errors.barcodeType = "Please select a barcode type.";
-  }
   if (!String(form?.category || "").trim()) {
     errors.category = "Please select a category.";
   }
@@ -96,7 +77,6 @@ function validateProductForm(form) {
     errors.stockQuantity = "Stock quantity cannot be negative.";
   }
 
-  if (!String(form?.unit || "").trim()) errors.unit = "Please select a unit.";
   if (String(form?.description || "").trim().length > 500) {
     errors.description = "Description must be 500 characters or less.";
   }
@@ -186,15 +166,12 @@ export default function ProductList() {
     setProductForm({
       name: String(product?.name || ""),
       sku: String(product?.sku || ""),
-      barcode: String(product?.barcode || ""),
-      barcodeType: String(product?.barcodeType || "UPC"),
       category:
         typeof product?.category === "object"
           ? String(product?.category?._id || "")
           : String(product?.category || ""),
       price: String(product?.price ?? ""),
       stockQuantity: String(product?.stockQuantity ?? ""),
-      unit: String(product?.unit || "pc"),
       description: String(product?.description || ""),
     });
     setSelectedImages([]);
@@ -282,12 +259,9 @@ export default function ProductList() {
     const payload = {
       name: productForm.name.trim(),
       sku: productForm.sku.trim(),
-      barcode: productForm.barcode.trim(),
-      barcodeType: productForm.barcodeType,
       category: productForm.category,
       price: Number(productForm.price),
       stockQuantity: Number(productForm.stockQuantity),
-      unit: productForm.unit,
       description: productForm.description.trim(),
     };
 
@@ -493,42 +467,6 @@ export default function ProductList() {
                 <Text style={styles.fieldError}>{formErrors.sku}</Text>
               )}
 
-              <Text style={styles.fieldLabel}>Barcode</Text>
-              <TextInput
-                style={[styles.input, formErrors.barcode && styles.inputError]}
-                placeholder="Enter barcode"
-                value={productForm.barcode}
-                onChangeText={(value) =>
-                  updateProductFormField("barcode", value)
-                }
-              />
-              {!!formErrors.barcode && (
-                <Text style={styles.fieldError}>{formErrors.barcode}</Text>
-              )}
-
-              <Text style={styles.fieldLabel}>Barcode Type</Text>
-              <View style={styles.optionWrap}>
-                {BARCODE_OPTIONS.map((option) => (
-                  <TouchableOpacity
-                    key={option}
-                    style={[
-                      styles.optionBtn,
-                      formErrors.barcodeType && styles.optionBtnError,
-                      productForm.barcodeType === option &&
-                        styles.optionBtnActive,
-                    ]}
-                    onPress={() =>
-                      updateProductFormField("barcodeType", option)
-                    }
-                  >
-                    <Text style={styles.optionText}>{option}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-              {!!formErrors.barcodeType && (
-                <Text style={styles.fieldError}>{formErrors.barcodeType}</Text>
-              )}
-
               <Text style={styles.fieldLabel}>Category</Text>
               <View style={styles.optionWrap}>
                 {categoryList.map((category) => (
@@ -583,26 +521,6 @@ export default function ProductList() {
                 <Text style={styles.fieldError}>
                   {formErrors.stockQuantity}
                 </Text>
-              )}
-
-              <Text style={styles.fieldLabel}>Unit</Text>
-              <View style={styles.optionWrap}>
-                {UNIT_OPTIONS.map((option) => (
-                  <TouchableOpacity
-                    key={option}
-                    style={[
-                      styles.optionBtn,
-                      formErrors.unit && styles.optionBtnError,
-                      productForm.unit === option && styles.optionBtnActive,
-                    ]}
-                    onPress={() => updateProductFormField("unit", option)}
-                  >
-                    <Text style={styles.optionText}>{option}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-              {!!formErrors.unit && (
-                <Text style={styles.fieldError}>{formErrors.unit}</Text>
               )}
 
               <Text style={styles.fieldLabel}>Description</Text>

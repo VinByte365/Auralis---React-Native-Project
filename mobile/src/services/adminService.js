@@ -188,10 +188,16 @@ export const fetchAdminOrders = async (params = {}) => {
 };
 
 export const updateAdminOrderStatus = async (orderId, status) => {
+  console.log("[ADMIN][ORDER_STATUS] update request", { orderId, status });
   const response = await axiosInstance.put(`/api/v1/orders/${orderId}/status`, {
     status,
   });
-  return unwrapResult(response);
+  const result = unwrapResult(response);
+  console.log("[ADMIN][ORDER_STATUS] update success", {
+    orderId: result?._id || orderId,
+    status: result?.status || status,
+  });
+  return result;
 };
 
 export const fetchAdminUsers = async () => {

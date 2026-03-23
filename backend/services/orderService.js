@@ -11,7 +11,10 @@ function toNumber(value, fallback = 0) {
 }
 
 async function getPushTokenAndTrigger(userId, body, data = {}) {
-  if (!userId) return;
+  if (!userId) {
+    console.log("[ORDER][PUSH] skipped: missing userId");
+    return { sent: false, reason: "missing_user_id" };
+  }
 
   const user = await User.findById(userId).select("pushToken");
   const pushToken =
@@ -19,21 +22,51 @@ async function getPushTokenAndTrigger(userId, body, data = {}) {
       ? user.pushToken
       : user?.pushToken?.token;
 
-  if (!pushToken) return;
+  if (!pushToken) {
+    console.log("[ORDER][PUSH] skipped: user has no push token", { userId });
+    return { sent: false, reason: "missing_push_token", userId };
+  }
 
   try {
     const result = await sendPushToUser(pushToken, "Auralis", body, data);
 
     if (!result?.sent) {
-      return;
+      console.log("[ORDER][PUSH] not sent", {
+        userId,
+        reason: result?.reason,
+      });
+      return result;
     }
 
     const hasErrorTicket = (result.tickets || []).some(
       (ticket) => ticket?.status === "error",
     );
+
+    console.log("[ORDER][PUSH] sent", {
+      userId,
+      hasErrorTicket,
+      notificationId: result?.notificationId,
+    });
+
+    return result;
   } catch (error) {
-    // Notification send failed
+    console.log("[ORDER][PUSH] failed", {
+      userId,
+      message: error?.message,
+    });
+    return { sent: false, reason: "send_error", error: error?.message };
   }
+}
+
+function resolveOrderUserId(order = {}) {
+  return (
+    order?.user?._id ||
+    order?.user ||
+    order?.userId ||
+    order?.customer ||
+    order?.customerId ||
+    null
+  );
 }
 
 exports.confirmOrder = async (request = {}) => {
@@ -235,8 +268,17 @@ exports.updateOrderStatus = async (request = {}) => {
 
   if (!order) throw new Error("order not found");
 
+  const recipientUserId = resolveOrderUserId(order);
+
+  if (!recipientUserId) {
+    console.log("[ORDER][STATUS] no recipient user for notification", {
+      orderId,
+      status,
+    });
+  }
+
   await getPushTokenAndTrigger(
-    order.user?._id || order.user,
+    recipientUserId,
     `Your order ${order._id} is now ${status}`,
     {
       screen: "OrderDetails",

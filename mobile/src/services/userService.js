@@ -105,16 +105,65 @@ export const updateProfile = async (userId, payload = {}) => {
 };
 
 export const registerPushToken = async (token, platform = "unknown") => {
-  const response = await axiosInstance.post("/api/v1/user/push-token", {
-    token,
-    platform,
-  });
+  const normalizedToken = String(token || "").trim();
+  if (!normalizedToken) {
+    throw new Error("push token is required");
+  }
 
-  return unwrapResult(response);
+  const maxAttempts = 3;
+  let lastError = null;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      console.log("[PUSH][REGISTER] request", {
+        platform,
+        attempt,
+        tokenPreview: `${normalizedToken.slice(0, 12)}...`,
+      });
+
+      const response = await axiosInstance.post("/api/v1/user/push-token", {
+        token: normalizedToken,
+        platform,
+      });
+
+      const result = unwrapResult(response);
+
+      console.log("[PUSH][REGISTER] success", {
+        platform,
+        attempt,
+      });
+
+      return result;
+    } catch (error) {
+      lastError = error;
+      console.log("[PUSH][REGISTER] failed", {
+        platform,
+        attempt,
+        status: error?.response?.status,
+        code: error?.code,
+        message:
+          error?.response?.data?.message || error?.message || "Request failed",
+      });
+
+      if (attempt < maxAttempts) {
+        await new Promise((resolve) => setTimeout(resolve, 800 * attempt));
+      }
+    }
+  }
+
+  throw lastError || new Error("Failed to register push token");
 };
 
 export const removePushToken = async () => {
-  const response = await axiosInstance.delete("/api/v1/user/push-token");
-
-  return unwrapResult(response);
+  try {
+    const response = await axiosInstance.delete("/api/v1/user/push-token");
+    return unwrapResult(response);
+  } catch (error) {
+    console.log("[PUSH][REMOVE] failed", {
+      status: error?.response?.status,
+      code: error?.code,
+      message: error?.response?.data?.message || error?.message,
+    });
+    throw error;
+  }
 };

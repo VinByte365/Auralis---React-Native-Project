@@ -139,25 +139,44 @@ exports.addPushToken = async (request) => {
   const { userId } = request.user || {};
   const { token, platform = "unknown" } = request.body || {};
 
+  const normalizedToken = String(token || "").trim();
+
+  console.log("[PUSH][SAVE] request", {
+    userId,
+    platform,
+    hasToken: Boolean(normalizedToken),
+    tokenPreview: normalizedToken ? `${normalizedToken.slice(0, 12)}...` : "",
+  });
+
   if (!userId) throw new Error("missing authenticated user");
-  if (!token) throw new Error("push token is required");
+  if (!normalizedToken) throw new Error("push token is required");
 
   const user = await User.findById(userId);
   if (!user) throw new Error("failed to find the user");
 
+  const existingToken = String(user?.pushToken?.token || "").trim();
+  const isSameToken = existingToken && existingToken === normalizedToken;
+
   user.pushToken = {
-    token,
+    token: normalizedToken,
     platform,
     lastUpdate: Date.now(),
   };
 
   await user.save();
 
+  console.log("[PUSH][SAVE] success", {
+    userId,
+    platform,
+    isSameToken,
+  });
+
   return user.pushToken;
 };
 
 exports.removePushToken = async (request) => {
   const { userId } = request.user || {};
+  console.log("[PUSH][REMOVE] request", { userId });
   if (!userId) throw new Error("missing authenticated user");
 
   const user = await User.findById(userId);
@@ -165,6 +184,8 @@ exports.removePushToken = async (request) => {
 
   user.pushToken = undefined;
   await user.save();
+
+  console.log("[PUSH][REMOVE] success", { userId });
 
   return { removed: true };
 };

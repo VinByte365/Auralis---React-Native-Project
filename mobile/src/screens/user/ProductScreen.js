@@ -208,11 +208,6 @@ export default function ProductScreen({ route, navigation }) {
                   Stock: {productDetails.stockQuantity ?? 0}
                 </Text>
               </View>
-              <View style={styles.metaItem}>
-                <Text style={styles.metaText}>
-                  {productDetails.unit || "pc"}
-                </Text>
-              </View>
             </View>
 
             <Text style={styles.sectionTitle}>Description</Text>

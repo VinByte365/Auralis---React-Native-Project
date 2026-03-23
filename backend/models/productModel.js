@@ -29,20 +29,6 @@ const productSchema = new mongoose.Schema(
     },
 
     // =========================
-    // BARCODE
-    // =========================
-    barcode: {
-      type: String,
-      required: true,
-      unique: true,
-    },
-    barcodeType: {
-      type: String,
-      enum: ["UPC", "EAN_13", "EAN_8", "ISBN_10", "ISBN_13", "CODE_128", "QR"],
-      default: "UPC",
-    },
-
-    // =========================
     // CATEGORY & PRICING
     // =========================
     category: {
@@ -78,11 +64,6 @@ const productSchema = new mongoose.Schema(
       required: true,
       min: 0,
     },
-    unit: {
-      type: String,
-      enum: ["kg", "g", "pc", "liter", "ml", "pack"],
-      required: true,
-    },
     excludedFromDiscount: {
       type: Boolean,
       default: false,
@@ -111,7 +92,6 @@ const productSchema = new mongoose.Schema(
 // =========================
 // INDEXES
 // =========================
-productSchema.index({ barcode: 1, barcodeType: 1 });
 productSchema.index({ isBNPC: 1 });
 productSchema.index({ bnpcCategory: 1 });
 

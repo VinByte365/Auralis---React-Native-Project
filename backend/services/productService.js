@@ -76,7 +76,6 @@ const buildProductFilters = (query = {}) => {
     filters.$or = [
       { name: { $regex: searchTerm, $options: "i" } },
       { sku: { $regex: searchTerm, $options: "i" } },
-      { barcode: { $regex: searchTerm, $options: "i" } },
     ];
   }
 
@@ -186,29 +185,15 @@ const search = async (request = {}) => {
   const products = await Product.find({
     deletedAt: null,
     $or: [
-      { barcode: { $regex: searchTerm, $options: "i" } },
       { name: { $regex: searchTerm, $options: "i" } },
       { sku: { $regex: searchTerm, $options: "i" } },
     ],
   })
     .populate("category")
     .limit(20)
-    .select("_id name barcode sku price stockQuantity images category");
+    .select("_id name sku price stockQuantity images category");
 
   return { products };
-};
-
-const getBarcode = async (request = {}) => {
-  const { barcode } = request.query;
-  if (!barcode) throw new Error("barcode is required");
-
-  const product = await Product.findOne({
-    barcode: String(barcode).trim(),
-    deletedAt: null,
-  }).populate("category");
-
-  if (!product) throw new Error("product is not found");
-  return product;
 };
 
 const update = async (request = {}) => {
@@ -398,5 +383,4 @@ module.exports = {
   hardDelete,
   restore,
   updateStock,
-  getBarcode,
 };
