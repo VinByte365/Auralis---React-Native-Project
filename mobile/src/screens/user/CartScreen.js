@@ -1,4 +1,3 @@
-import React, { useMemo } from "react";
 import {
   Alert,
   FlatList,
@@ -9,79 +8,22 @@ import {
   View,
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useDispatch, useSelector } from "react-redux";
-import {
-  addToCart,
-  clearCart,
-  removeFromCart,
-} from "../../redux/thunks/cartThunks";
+import useCart from "../../hooks/user/useCart";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const productImagePlaceholder = require("../../../assets/home/3.png");
 
 export default function CartScreen({ navigation }) {
-  const dispatch = useDispatch();
-  const { items, isLoading, error } = useSelector((state) => state.cart);
-
-  const subtotal = useMemo(
-    () =>
-      items.reduce(
-        (sum, item) =>
-          sum + Number(item.price || 0) * Number(item.quantity || 0),
-        0,
-      ),
-    [items],
-  );
-
-  const handleIncreaseQty = async (item) => {
-    await dispatch(
-      addToCart({
-        product: {
-          _id: item.productId,
-          name: item.name,
-          price: item.price,
-          images: item.image ? [{ url: item.image }] : [],
-          saleActive: false,
-          salePrice: null,
-        },
-        quantity: Number(item.quantity || 0) + 1,
-      }),
-    );
-  };
-
-  const handleDecreaseQty = async (item) => {
-    const currentQty = Number(item.quantity || 0);
-    if (currentQty <= 1) {
-      await dispatch(removeFromCart(item.productId));
-      return;
-    }
-
-    await dispatch(
-      addToCart({
-        product: {
-          _id: item.productId,
-          name: item.name,
-          price: item.price,
-          images: item.image ? [{ url: item.image }] : [],
-          saleActive: false,
-          salePrice: null,
-        },
-        quantity: currentQty - 1,
-      }),
-    );
-  };
-
-  const handleCheckout = async () => {
-    if (!items.length) return;
-
-    navigation.navigate("Checkout");
-  };
-
-  const handleClearCart = async () => {
-    if (!items.length) return;
-
-    await dispatch(clearCart());
-  };
+  const {
+    items,
+    isLoading,
+    error,
+    subtotal,
+    handleCheckout,
+    handleClearCart,
+    handleDecreaseQty,
+    handleIncreaseQty,
+  } = useCart();
 
   return (
     <SafeAreaView style={styles.container}>
