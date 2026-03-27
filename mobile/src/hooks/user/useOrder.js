@@ -3,6 +3,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useDispatch, useSelector } from "react-redux";
 import { getOrders } from "../../redux/thunks/orderThunks";
+import { getSpecificOrder } from "../../services/orderService";
 
 const FILTERS = [
   { key: "ALL", label: "All" },
@@ -27,7 +28,7 @@ export default function useOrder() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [activeFilter, setActiveFilter] = useState("ALL");
-  const [orderInfo, setOrderInfo] = useState(null)
+  const [orderInfo, setOrderInfo] = useState(null);
   const passedOrder = orderInfo?.order;
   const orderId = orderInfo?.orderId;
 
@@ -47,15 +48,9 @@ export default function useOrder() {
       try {
         setLoading(true);
         setError("");
-        const response = await axiosInstance.get(`/api/v1/orders/${orderId}`);
-        if (active) {
-          const fetched = response.data?.result || response.data;
-          console.log("[ORDER_DETAILS] fetch success", {
-            orderId: fetched?._id,
-            status: fetched?.status,
-          });
-          setFetchedOrder(fetched);
-        }
+        if (!active) return;
+        const fetched = await getSpecificOrder(orderId);
+        setFetchedOrder(fetched);
       } catch (err) {
         if (active) {
           const errorMessage =
@@ -63,12 +58,6 @@ export default function useOrder() {
             err?.response?.data?.error?.message ||
             err?.message ||
             "Failed to load order";
-          console.log("[ORDER_DETAILS] fetch error", {
-            orderId,
-            status: err?.response?.status,
-            data: err?.response?.data,
-            message: errorMessage,
-          });
           setError(errorMessage);
         }
       } finally {
@@ -122,6 +111,6 @@ export default function useOrder() {
     order,
     error,
     loading,
-    setOrderInfo
+    setOrderInfo,
   };
 }
