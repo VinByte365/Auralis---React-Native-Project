@@ -1,15 +1,24 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, {
+  useEffect,
+  useRef,
+  useState,
+  useMemo,
+  useCallback,
+} from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   addToCart,
   clearCart,
   removeFromCart,
 } from "../../redux/thunks/cartThunks";
+import { useNavigation, useRoute } from "@react-navigation/native";
 
 export default function useCart() {
   const dispatch = useDispatch();
   const { items, isLoading, error } = useSelector((state) => state.cart);
-
+  const navigation = useNavigation();
+  const route = useRoute();
+  
   const subtotal = useMemo(
     () =>
       items.reduce(
@@ -60,6 +69,7 @@ export default function useCart() {
 
   const handleCheckout = async () => {
     if (!items.length) return;
+    console.log(items.length);
 
     navigation.navigate("Checkout");
   };
