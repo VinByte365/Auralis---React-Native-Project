@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import useOrder from "../../hooks/user/useOrder";
+import { formatDate, formatMoney } from "../../utils/format";
 
 const FILTERS = [
   { key: "ALL", label: "All" },
@@ -19,25 +20,6 @@ const FILTERS = [
   { key: "CANCELLED", label: "Cancelled" },
   { key: "REFUNDED", label: "Refunded" },
 ];
-
-function formatMoney(value) {
-  return Number(value || 0).toFixed(2);
-}
-
-function formatDate(value) {
-  if (!value) return "-";
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "-";
-
-  return date.toLocaleString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
 
 export default function OrderScreen() {
   const {
