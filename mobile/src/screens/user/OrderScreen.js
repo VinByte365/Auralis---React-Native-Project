@@ -1,4 +1,3 @@
-import React, { useMemo, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -8,12 +7,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useFocusEffect } from "@react-navigation/native";
-import { useNavigation } from "@react-navigation/native";
-import { useCallback } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { getOrders } from "../../redux/thunks/orderThunks";
 import { SafeAreaView } from "react-native-safe-area-context";
+import useOrder from "../../hooks/user/useOrder";
 
 const FILTERS = [
   { key: "ALL", label: "All" },
@@ -45,25 +40,16 @@ function formatDate(value) {
 }
 
 export default function OrderScreen() {
-  const navigation = useNavigation();
-  const dispatch = useDispatch();
-  const { orders, isLoading, error } = useSelector((state) => state.order);
-  const [activeFilter, setActiveFilter] = useState("ALL");
-
-  const loadOrders = useCallback(async () => {
-    await dispatch(getOrders());
-  }, [dispatch]);
-
-  useFocusEffect(
-    useCallback(() => {
-      loadOrders();
-    }, [loadOrders]),
-  );
-
-  const filteredOrders = useMemo(() => {
-    if (activeFilter === "ALL") return orders;
-    return orders.filter((order) => order.status === activeFilter);
-  }, [orders, activeFilter]);
+  const {
+    navigation,
+    orders,
+    isLoading,
+    error,
+    activeFilter,
+    setActiveFilter,
+    loadOrders,
+    filteredOrders,
+  } = useOrder();
 
   const renderOrder = ({ item }) => {
     const itemCount = Array.isArray(item.items)
