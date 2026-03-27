@@ -27,9 +27,9 @@ export default function useOrder() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [activeFilter, setActiveFilter] = useState("ALL");
-
-  const passedOrder = route.params?.order;
-  const orderId = route.params?.orderId;
+  const [orderInfo, setOrderInfo] = useState(null)
+  const passedOrder = orderInfo?.order;
+  const orderId = orderInfo?.orderId;
 
   const reduxOrder =
     passedOrder ||
@@ -122,5 +122,6 @@ export default function useOrder() {
     order,
     error,
     loading,
+    setOrderInfo
   };
 }

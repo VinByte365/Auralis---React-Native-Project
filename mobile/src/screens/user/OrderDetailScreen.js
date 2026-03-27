@@ -1,4 +1,3 @@
-import React, { useState, useEffect } from "react";
 import {
   FlatList,
   ScrollView,
@@ -8,13 +7,19 @@ import {
   View,
   ActivityIndicator,
 } from "react-native";
+import React from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { formatDate, formatMoney } from "../../utils/format";
+import { useRoute } from "@react-navigation/native";
 import useOrder from "../../hooks/user/useOrder";
 
 export default function OrderDetailScreen() {
-  const { items, itemCount, order, error, loading } =
-    useOrder();
+  const { items, itemCount, order, error, loading, setOrderInfo } = useOrder();
+  const route = useRoute();
+
+  React.useEffect(() => {
+    setOrderInfo(route.params);
+  }, [route.params]);
 
   if (loading) {
     return (
