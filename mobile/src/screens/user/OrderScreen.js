@@ -26,7 +26,7 @@ export default function OrderScreen() {
     navigation,
     orders,
     isLoading,
-    error,
+    orderError,
     activeFilter,
     setActiveFilter,
     loadOrders,
@@ -181,7 +181,7 @@ export default function OrderScreen() {
                   ? "You haven't placed any orders yet."
                   : `No ${activeFilter.toLowerCase()} orders at the moment.`}
               </Text>
-              {!!error && <Text style={styles.errorText}>{error}</Text>}
+              {!!orderError && <Text style={styles.orderErrorText}>{orderError}</Text>}
             </View>
           }
           showsVerticalScrollIndicator={false}
@@ -347,7 +347,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 20,
   },
-  errorText: {
+  orderErrorText: {
     marginTop: 16,
     fontSize: 13,
     color: "#d32f2f",
