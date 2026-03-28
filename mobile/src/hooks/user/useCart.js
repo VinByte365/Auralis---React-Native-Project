@@ -18,7 +18,7 @@ export default function useCart() {
   const { items, isLoading, error } = useSelector((state) => state.cart);
   const navigation = useNavigation();
   const route = useRoute();
-  
+
   const subtotal = useMemo(
     () =>
       items.reduce(
@@ -74,6 +74,9 @@ export default function useCart() {
     navigation.navigate("Checkout");
   };
 
+  const handleRemoveFromCart = (productId) =>
+    dispatch(removeFromCart(productId));
+
   const handleClearCart = async () => {
     if (!items.length) return;
 
@@ -89,5 +92,6 @@ export default function useCart() {
     handleClearCart,
     handleDecreaseQty,
     handleIncreaseQty,
+    handleRemoveFromCart
   };
 }

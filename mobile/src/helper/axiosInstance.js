@@ -1,4 +1,4 @@
-import axios, { isAxiosError } from "axios";
+import axios from "axios";
 import { API_URL } from "../constants/config";
 import { getToken } from "../utils/token";
 
@@ -19,7 +19,7 @@ async function attachPersistentInterceptor(config) {
   if (config.__retryCount >= config.retry) return null;
 
   config.__retryCount++;
-  console.log("retry count: ",config.__retryCount)
+
   await new Promise((r) => setTimeout(r, 500));
 
   return axiosInstance(config);

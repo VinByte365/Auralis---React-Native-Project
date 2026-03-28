@@ -23,6 +23,7 @@ export default function CartScreen({ navigation }) {
     handleClearCart,
     handleDecreaseQty,
     handleIncreaseQty,
+    handleRemoveFromCart,
   } = useCart();
 
   return (
@@ -98,7 +99,7 @@ export default function CartScreen({ navigation }) {
 
                   <TouchableOpacity
                     style={styles.deleteButton}
-                    onPress={() => dispatch(removeFromCart(item.productId))}
+                    onPress={() => handleRemoveFromCart(item.productId)}
                   >
                     <MaterialCommunityIcons
                       name="trash-can-outline"

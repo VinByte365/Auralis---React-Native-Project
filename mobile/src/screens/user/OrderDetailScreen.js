@@ -14,7 +14,7 @@ import { useRoute } from "@react-navigation/native";
 import useOrder from "../../hooks/user/useOrder";
 
 export default function OrderDetailScreen() {
-  const { items, itemCount, order, error, loading, setOrderInfo } = useOrder();
+  const { items, itemCount, order, error, loading, setOrderInfo, navigation } = useOrder();
   const route = useRoute();
 
   React.useEffect(() => {
