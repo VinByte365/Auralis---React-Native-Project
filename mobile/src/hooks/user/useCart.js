@@ -1,9 +1,5 @@
 import React, {
-  useEffect,
-  useRef,
-  useState,
   useMemo,
-  useCallback,
 } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -69,7 +65,6 @@ export default function useCart() {
 
   const handleCheckout = async () => {
     if (!items.length) return;
-    console.log(items.length);
 
     navigation.navigate("Checkout");
   };

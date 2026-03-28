@@ -19,7 +19,7 @@ export default function OrderDetailScreen() {
 
   React.useEffect(() => {
     setOrderInfo(route.params);
-  }, [route.params]);
+  }, [route.params,setOrderInfo]);
 
   if (loading) {
     return (

@@ -83,7 +83,7 @@ axiosInstance.interceptors.response.use(
       responseData,
     });
 
-    const retryResponse = shouldRetry(error, config.method?.toUpperCase())
+    const retryResponse = shouldRetry(error,method)
       ? await attachPersistentInterceptor(config)
       : false;
     if (retryResponse) return retryResponse;

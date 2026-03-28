@@ -1,23 +1,12 @@
 import React, { useMemo, useState, useCallback, useEffect } from "react";
 import { useFocusEffect } from "@react-navigation/native";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { useNavigation } from "@react-navigation/native";
 import { useDispatch, useSelector } from "react-redux";
 import { getOrders } from "../../redux/thunks/orderThunks";
 import { getSpecificOrder } from "../../services/orderService";
 
-const FILTERS = [
-  { key: "ALL", label: "All" },
-  { key: "PENDING", label: "Pending" },
-  { key: "CONFIRMED", label: "Confirmed" },
-  { key: "PROCESSING", label: "Processing" },
-  { key: "COMPLETED", label: "Completed" },
-  { key: "CANCELLED", label: "Cancelled" },
-  { key: "REFUNDED", label: "Refunded" },
-];
-
 export default function useOrder() {
   const navigation = useNavigation();
-  const route = useRoute();
   const dispatch = useDispatch();
   const {
     orders,
@@ -50,6 +39,7 @@ export default function useOrder() {
         setError("");
         if (!active) return;
         const fetched = await getSpecificOrder(orderId);
+        if (!active) return;
         setFetchedOrder(fetched);
       } catch (err) {
         if (active) {
@@ -109,7 +99,6 @@ export default function useOrder() {
     fetchedOrder,
     orderId,
     order,
-    error,
     loading,
     setOrderInfo,
   };
