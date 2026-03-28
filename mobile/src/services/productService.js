@@ -27,6 +27,7 @@ function buildProductFormData(payload = {}) {
 export const fetchProducts = async (filters = {}) => {
   const response = await axiosInstance.get("/api/v1/product", {
     params: filters,
+    retry:5
   });
   const result = unwrapResult(response);
 
@@ -46,12 +47,16 @@ export const fetchProducts = async (filters = {}) => {
 };
 
 export const fetchProductById = async (productId) => {
-  const response = await axiosInstance.get(`/api/v1/product/${productId}`);
+  const response = await axiosInstance.get(`/api/v1/product/${productId}`,{
+    retry:5
+  });
   return unwrapResult(response);
 };
 
 export const fetchCategories = async () => {
-  const response = await axiosInstance.get("/api/v1/category");
+  const response = await axiosInstance.get("/api/v1/category",{
+    retry:5
+  });
   return unwrapResult(response);
 };
 
