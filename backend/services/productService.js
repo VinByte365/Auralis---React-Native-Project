@@ -3,6 +3,7 @@ const Review = require("../models/reviewModel");
 const { uploadImage, deleteAssets } = require("../utils/cloundinaryUtil");
 const { createLog } = require("./activityLogsService");
 const { sendPromotionNotificationToUsers } = require("./notificationService");
+const redis = require("../configs/redis");
 const slugify = require("slugify");
 
 async function notifyPromotionForProduct(product, type = "promotion") {
@@ -97,6 +98,11 @@ const buildProductFilters = (query = {}) => {
     }
   }
 
+  // const normalizeFilters = (query) =>
+  //   Object.keys(query)
+  //     .sort()
+  //     .reduce((acc, curr) => (acc[curr] = query[curr]));
+
   return filters;
 };
 
@@ -135,7 +141,8 @@ const create = async (request) => {
 const getAll = async (request) => {
   const { minRating } = request.query || {};
   const filters = buildProductFilters(request.query || {});
-
+  const redisArg = `products:${JSON.stringify(filters)}`;
+  console.log(request.query);
   const normalizedMinRating = Number(minRating);
   if (Number.isFinite(normalizedMinRating) && normalizedMinRating > 0) {
     const ratingMatches = await Review.aggregate([
@@ -162,9 +169,20 @@ const getAll = async (request) => {
     };
   }
 
+  const cached = await redis.get(redisArg);
+
+  if (cached) {
+    const parseCached = JSON.parse(cached);
+    console.log("from Redis:", parseCached.length);
+    return parseCached;
+  }
+
   const products = await Product.find(filters)
     .populate("category")
     .sort({ createdAt: -1 });
+
+  redis.setEx(redisArg, process.env.TTL, JSON.stringify(products));
+
   return products;
 };
 

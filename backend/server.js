@@ -3,7 +3,7 @@ const app = require("./app");
 const http = require("http");
 
 require("./configs/database")();
-require("./configs/redis")();
+require("./configs/redis")
 
 const server = http.createServer(app);
 const port = process.env.PORT || 3000;
