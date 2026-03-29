@@ -3,7 +3,9 @@ import { unwrapResult } from "./apiHelpers";
 
 export const fetchProductReviews = async (productId) => {
   const response = await axiosInstance.get(
-    `/api/v1/reviews/product/${productId}`,
+    `/api/v1/reviews/product/${productId}`,{
+      retry:5
+    }
   );
   // console.log(response.data)
   return unwrapResult(response);

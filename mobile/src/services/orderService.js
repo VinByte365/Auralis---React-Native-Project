@@ -2,7 +2,16 @@ import axiosInstance from "../helper/axiosInstance";
 import { unwrapResult } from "./apiHelpers";
 
 export const fetchOrders = async () => {
-  const response = await axiosInstance.get("/api/v1/orders");
+  const response = await axiosInstance.get("/api/v1/orders",{
+    retry:5
+  });
+  return unwrapResult(response);
+};
+
+export const getSpecificOrder = async (orderId) => {
+  const response = await axiosInstance.get(`/api/v1/orders/${orderId}`,{
+    retry:5
+  });
   return unwrapResult(response);
 };
 

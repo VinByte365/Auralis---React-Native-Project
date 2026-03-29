@@ -25,7 +25,9 @@ function buildProfileFormData(payload = {}) {
 }
 
 export const fetchProfile = async (userId) => {
-  const response = await axiosInstance.get(`/api/v1/user/${userId}`);
+  const response = await axiosInstance.get(`/api/v1/user/${userId}`, {
+    retry: 5,
+  });
   return unwrapResult(response);
 };
 

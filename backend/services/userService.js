@@ -141,13 +141,6 @@ exports.addPushToken = async (request) => {
 
   const normalizedToken = String(token || "").trim();
 
-  console.log("[PUSH][SAVE] request", {
-    userId,
-    platform,
-    hasToken: Boolean(normalizedToken),
-    tokenPreview: normalizedToken ? `${normalizedToken.slice(0, 12)}...` : "",
-  });
-
   if (!userId) throw new Error("missing authenticated user");
   if (!normalizedToken) throw new Error("push token is required");
 
@@ -164,12 +157,6 @@ exports.addPushToken = async (request) => {
   };
 
   await user.save();
-
-  console.log("[PUSH][SAVE] success", {
-    userId,
-    platform,
-    isSameToken,
-  });
 
   return user.pushToken;
 };

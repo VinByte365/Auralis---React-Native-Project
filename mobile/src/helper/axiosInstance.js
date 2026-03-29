@@ -11,6 +11,33 @@ const axiosInstance = axios.create({
   },
 });
 
+async function attachPersistentInterceptor(config) {
+  if (!config || !config?.retry) return null;
+
+  config.__retryCount = config.__retryCount || 0;
+
+  if (config.__retryCount >= config.retry) return null;
+
+  config.__retryCount++;
+
+  await new Promise((r) => setTimeout(r, 500));
+
+  return axiosInstance(config);
+}
+
+function shouldRetry(error, method) {
+  const safeMethod = ["GET", "HEAD", "OPTIONS"];
+  if (
+    (!error.response ||
+      error?.response?.status >= 500 ||
+      error.code === "ECONNABORTED") 
+      &&
+    safeMethod.includes(method)
+  )
+    return true;
+  return false;
+}
+
 axiosInstance.interceptors.request.use(async (config) => {
   if (config?.skipIntercept) return config;
 
@@ -22,12 +49,6 @@ axiosInstance.interceptors.request.use(async (config) => {
     } else {
       delete config.headers["Content-Type"];
     }
-
-    console.log("[API][UPLOAD][REQUEST]", {
-      method: config?.method,
-      url: `${config?.baseURL || ""}${config?.url || ""}`,
-      timeout: config?.timeout,
-    });
   }
 
   const token = await getToken();
@@ -42,7 +63,7 @@ axiosInstance.interceptors.response.use(
   function onFulfilled(response) {
     return response;
   },
-  function onRejected(error) {
+  async function onRejected(error) {
     const config = error?.config || {};
     const method = String(config?.method || "GET").toUpperCase();
     const url = `${config?.baseURL || ""}${config?.url || ""}`;
@@ -61,6 +82,11 @@ axiosInstance.interceptors.response.use(
       hasResponse: Boolean(error?.response),
       responseData,
     });
+
+    const retryResponse = shouldRetry(error,method)
+      ? await attachPersistentInterceptor(config)
+      : false;
+    if (retryResponse) return retryResponse;
 
     return Promise.reject(error);
   },

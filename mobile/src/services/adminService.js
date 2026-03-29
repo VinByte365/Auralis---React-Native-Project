@@ -106,13 +106,16 @@ async function uploadAdminProductMultipart({
 }
 
 export const fetchAdminDashboardSummary = async () => {
-  const response = await axiosInstance.get("/api/v1/admin/dashboard/summary");
+  const response = await axiosInstance.get("/api/v1/admin/dashboard/summary",{
+    retry:5
+  });
   return unwrapResult(response);
 };
 
 export const fetchAdminActivityLogs = async (params = {}) => {
   const response = await axiosInstance.get("/api/v1/logs/logs", {
     params: toQueryParams(params),
+    retry:5
   });
   return unwrapResult(response);
 };
@@ -120,6 +123,7 @@ export const fetchAdminActivityLogs = async (params = {}) => {
 export const fetchAdminSalesAnalytics = async (params = {}) => {
   const response = await axiosInstance.get("/api/v1/admin/analytics/sales", {
     params: toQueryParams(params),
+    retry:5
   });
   return unwrapResult(response);
 };
@@ -127,6 +131,7 @@ export const fetchAdminSalesAnalytics = async (params = {}) => {
 export const fetchAdminProductAnalytics = async (params = {}) => {
   const response = await axiosInstance.get("/api/v1/admin/analytics/products", {
     params: toQueryParams(params),
+    retry:5
   });
   return unwrapResult(response);
 };
@@ -134,6 +139,7 @@ export const fetchAdminProductAnalytics = async (params = {}) => {
 export const fetchAdminUserAnalytics = async (params = {}) => {
   const response = await axiosInstance.get("/api/v1/admin/analytics/users", {
     params: toQueryParams(params),
+    retry:5
   });
   return unwrapResult(response);
 };
@@ -141,12 +147,15 @@ export const fetchAdminUserAnalytics = async (params = {}) => {
 export const fetchAdminOrderAnalytics = async (params = {}) => {
   const response = await axiosInstance.get("/api/v1/admin/analytics/orders", {
     params: toQueryParams(params),
+    retry:5
   });
   return unwrapResult(response);
 };
 
 export const fetchAdminInventoryAnalytics = async () => {
-  const response = await axiosInstance.get("/api/v1/admin/analytics/inventory");
+  const response = await axiosInstance.get("/api/v1/admin/analytics/inventory",{
+    retry:5
+  });
   return unwrapResult(response);
 };
 
@@ -155,6 +164,7 @@ export const fetchAdminStaffPerformance = async (params = {}) => {
     "/api/v1/admin/analytics/staff-performance",
     {
       params: toQueryParams(params),
+      retry:5
     },
   );
   return unwrapResult(response);
@@ -165,6 +175,7 @@ export const fetchAdminCustomerInsights = async (params = {}) => {
     "/api/v1/admin/analytics/customer-insights",
     {
       params: toQueryParams(params),
+      retry:5
     },
   );
   return unwrapResult(response);
@@ -175,6 +186,7 @@ export const fetchAdminPredictiveAnalytics = async (params = {}) => {
     "/api/v1/admin/analytics/predictive",
     {
       params: toQueryParams(params),
+      retry:5
     },
   );
   return unwrapResult(response);
@@ -183,6 +195,7 @@ export const fetchAdminPredictiveAnalytics = async (params = {}) => {
 export const fetchAdminOrders = async (params = {}) => {
   const response = await axiosInstance.get("/api/v1/admin/orders", {
     params: toQueryParams(params),
+    retry:5
   });
   return unwrapResult(response);
 };
@@ -201,7 +214,9 @@ export const updateAdminOrderStatus = async (orderId, status) => {
 };
 
 export const fetchAdminUsers = async () => {
-  const response = await axiosInstance.get("/api/v1/user");
+  const response = await axiosInstance.get("/api/v1/user",{
+    retry:5
+  });
   return unwrapResult(response);
 };
 
@@ -229,7 +244,9 @@ export const deleteAdminUser = async (userId) => {
 };
 
 export const fetchAdminCategories = async () => {
-  const response = await axiosInstance.get("/api/v1/category");
+  const response = await axiosInstance.get("/api/v1/category",{
+    retry:5
+  });
   return unwrapResult(response);
 };
 
@@ -253,6 +270,7 @@ export const deleteAdminCategory = async (categoryId) => {
 export const fetchAdminProducts = async (params = {}) => {
   const response = await axiosInstance.get("/api/v1/product", {
     params: toQueryParams(params),
+    retry:5
   });
   return unwrapResult(response);
 };
@@ -333,6 +351,7 @@ export const updateAdminProductStock = async (productId, stockQuantity) => {
 export const fetchAdminPromos = async (params = {}) => {
   const response = await axiosInstance.get("/api/v1/promo", {
     params: toQueryParams(params),
+    retry:5
   });
 
   return unwrapResult(response);

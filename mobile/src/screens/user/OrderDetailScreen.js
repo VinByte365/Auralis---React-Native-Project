@@ -1,7 +1,5 @@
-import React, { useState, useEffect } from "react";
 import {
   FlatList,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -9,99 +7,19 @@ import {
   View,
   ActivityIndicator,
 } from "react-native";
-import { useNavigation, useRoute } from "@react-navigation/native";
-import { useSelector } from "react-redux";
-import axiosInstance from "../../helper/axiosInstance";
-
-function formatMoney(value) {
-  return Number(value || 0).toFixed(2);
-}
-
-function formatDate(value) {
-  if (!value) return "-";
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "-";
-
-  return date.toLocaleString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
+import React from "react";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { formatDate, formatMoney } from "../../utils/format";
+import { useRoute } from "@react-navigation/native";
+import useOrder from "../../hooks/user/useOrder";
 
 export default function OrderDetailScreen() {
-  const navigation = useNavigation();
+  const { items, itemCount, order, error, loading, setOrderInfo, navigation } = useOrder();
   const route = useRoute();
-  const orders = useSelector((state) => state.order.orders);
-  const [fetchedOrder, setFetchedOrder] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
-  const passedOrder = route.params?.order;
-  const orderId = route.params?.orderId;
-
-  // Try to find order from Redux first
-  const reduxOrder =
-    passedOrder ||
-    (orderId ? orders.find((o) => String(o._id) === String(orderId)) : null);
-
-  const order = reduxOrder || fetchedOrder;
-
-  // Fetch order from API if not found in Redux
-  useEffect(() => {
-    let active = true;
-
-    const fetchOrder = async () => {
-      if (!orderId || reduxOrder) return; // Order already found or no orderId
-
-      try {
-        setLoading(true);
-        setError("");
-        console.log("[ORDER_DETAILS] fetching order", { orderId });
-        const response = await axiosInstance.get(`/api/v1/orders/${orderId}`);
-        if (active) {
-          const fetched = response.data?.result || response.data;
-          console.log("[ORDER_DETAILS] fetch success", {
-            orderId: fetched?._id,
-            status: fetched?.status,
-          });
-          setFetchedOrder(fetched);
-        }
-      } catch (err) {
-        if (active) {
-          const errorMessage =
-            err?.response?.data?.message ||
-            err?.response?.data?.error?.message ||
-            err?.message ||
-            "Failed to load order";
-          console.log("[ORDER_DETAILS] fetch error", {
-            orderId,
-            status: err?.response?.status,
-            data: err?.response?.data,
-            message: errorMessage,
-          });
-          setError(errorMessage);
-        }
-      } finally {
-        if (active) setLoading(false);
-      }
-    };
-
-    fetchOrder();
-
-    return () => {
-      active = false;
-    };
-  }, [orderId, reduxOrder]);
-
-  const items = Array.isArray(order?.items) ? order.items : [];
-  const itemCount = items.reduce(
-    (sum, orderItem) => sum + Number(orderItem?.quantity || 0),
-    0,
-  );
+  React.useEffect(() => {
+    setOrderInfo(route.params);
+  }, [route.params,setOrderInfo]);
 
   if (loading) {
     return (

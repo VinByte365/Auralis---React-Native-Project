@@ -1,4 +1,3 @@
-import React, { useMemo, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -8,12 +7,9 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useFocusEffect } from "@react-navigation/native";
-import { useNavigation } from "@react-navigation/native";
-import { useCallback } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { getOrders } from "../../redux/thunks/orderThunks";
 import { SafeAreaView } from "react-native-safe-area-context";
+import useOrder from "../../hooks/user/useOrder";
+import { formatDate, formatMoney } from "../../utils/format";
 
 const FILTERS = [
   { key: "ALL", label: "All" },
@@ -25,45 +21,17 @@ const FILTERS = [
   { key: "REFUNDED", label: "Refunded" },
 ];
 
-function formatMoney(value) {
-  return Number(value || 0).toFixed(2);
-}
-
-function formatDate(value) {
-  if (!value) return "-";
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "-";
-
-  return date.toLocaleString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
 export default function OrderScreen() {
-  const navigation = useNavigation();
-  const dispatch = useDispatch();
-  const { orders, isLoading, error } = useSelector((state) => state.order);
-  const [activeFilter, setActiveFilter] = useState("ALL");
-
-  const loadOrders = useCallback(async () => {
-    await dispatch(getOrders());
-  }, [dispatch]);
-
-  useFocusEffect(
-    useCallback(() => {
-      loadOrders();
-    }, [loadOrders]),
-  );
-
-  const filteredOrders = useMemo(() => {
-    if (activeFilter === "ALL") return orders;
-    return orders.filter((order) => order.status === activeFilter);
-  }, [orders, activeFilter]);
+  const {
+    navigation,
+    orders,
+    isLoading,
+    orderError,
+    activeFilter,
+    setActiveFilter,
+    loadOrders,
+    filteredOrders,
+  } = useOrder();
 
   const renderOrder = ({ item }) => {
     const itemCount = Array.isArray(item.items)
@@ -213,7 +181,7 @@ export default function OrderScreen() {
                   ? "You haven't placed any orders yet."
                   : `No ${activeFilter.toLowerCase()} orders at the moment.`}
               </Text>
-              {!!error && <Text style={styles.errorText}>{error}</Text>}
+              {!!orderError && <Text style={styles.orderErrorText}>{orderError}</Text>}
             </View>
           }
           showsVerticalScrollIndicator={false}
@@ -379,7 +347,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 20,
   },
-  errorText: {
+  orderErrorText: {
     marginTop: 16,
     fontSize: 13,
     color: "#d32f2f",
