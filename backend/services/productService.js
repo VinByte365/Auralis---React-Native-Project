@@ -188,8 +188,14 @@ const getAll = async (request) => {
 
 const getById = async (request = {}) => {
   const { productId } = request.params;
+  const cached = await redis.get(productId);
+
+  if (cached) return JSON.parse(cached);
+
   const product = await Product.findById(productId).populate("category");
   if (!product) throw new Error("product is not found");
+
+  redis.setEx(String(productId), process.env.TTL, JSON.stringify(product));
   return product;
 };
 
@@ -257,6 +263,9 @@ const update = async (request = {}) => {
     );
     throw new Error("failed to update the product");
   }
+
+  redis.del(productId);
+
   createLog(
     request.user.userId,
     "UPDATE_PRODUCT",
@@ -314,6 +323,8 @@ const softDelete = async (request) => {
     throw new Error("failed to temporarily delete the product");
   }
 
+  redis.del(productId);
+
   createLog(
     request.user.userId,
     "TEMPORARY_DELETE",
@@ -369,6 +380,9 @@ const hardDelete = async (request) => {
     const publicIds = deletedProduct.map((image) => image.public_id);
     const imageDeleted = deleteAssets(publicIds);
   }
+
+  redis.del(productId);
+
   createLog(
     request.user.userId,
     "PERMANENT_DELETE",
@@ -382,11 +396,12 @@ const hardDelete = async (request) => {
 const updateStock = async (request) => {
   if (!request.body) throw new Error("undefined request body");
   const { productId } = request.params;
+
   const isUpdated = await Product.findByIdAndUpdate(productId, request.body, {
     returnDocument: "after",
   });
-  if (isUpdated) {
-  }
+  if (isUpdated) redis.del(productId);
+
   return isUpdated;
 };
 
