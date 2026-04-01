@@ -3,7 +3,6 @@ const Review = require("../models/reviewModel");
 const { uploadImage, deleteAssets } = require("../utils/cloundinaryUtil");
 const { createLog } = require("./activityLogsService");
 const { sendPromotionNotificationToUsers } = require("./notificationService");
-const redis = require("../configs/redis");
 const { setCache, getCache, deleteCached } = require("../cache/cache.service");
 const slugify = require("slugify");
 
