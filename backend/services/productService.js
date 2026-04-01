@@ -4,6 +4,7 @@ const { uploadImage, deleteAssets } = require("../utils/cloundinaryUtil");
 const { createLog } = require("./activityLogsService");
 const { sendPromotionNotificationToUsers } = require("./notificationService");
 const redis = require("../configs/redis");
+const { setCache, getCache, deleteCached } = require("../cache/cache.service");
 const slugify = require("slugify");
 
 async function notifyPromotionForProduct(product, type = "promotion") {
@@ -169,7 +170,7 @@ const getAll = async (request) => {
     };
   }
 
-  const cached = await redis.get(redisArg);
+  const cached = await getCache(redisArg);
 
   if (cached) {
     const parseCached = JSON.parse(cached);
@@ -181,21 +182,21 @@ const getAll = async (request) => {
     .populate("category")
     .sort({ createdAt: -1 });
 
-  redis.setEx(redisArg, process.env.TTL, JSON.stringify(products));
+  setCache(redisArg, null, products);
 
   return products;
 };
 
 const getById = async (request = {}) => {
   const { productId } = request.params;
-  const cached = await redis.get(productId);
+  const cached = await getCache(productId);
 
   if (cached) return JSON.parse(cached);
 
   const product = await Product.findById(productId).populate("category");
   if (!product) throw new Error("product is not found");
 
-  redis.setEx(String(productId), process.env.TTL, JSON.stringify(product));
+  setCache(productId, 10, product);
   return product;
 };
 
@@ -264,7 +265,7 @@ const update = async (request = {}) => {
     throw new Error("failed to update the product");
   }
 
-  redis.del(productId);
+  deleteCached(productId);
 
   createLog(
     request.user.userId,
@@ -323,7 +324,7 @@ const softDelete = async (request) => {
     throw new Error("failed to temporarily delete the product");
   }
 
-  redis.del(productId);
+  deleteCached(productId);
 
   createLog(
     request.user.userId,
@@ -381,7 +382,7 @@ const hardDelete = async (request) => {
     const imageDeleted = deleteAssets(publicIds);
   }
 
-  redis.del(productId);
+  deleteCached(productId);
 
   createLog(
     request.user.userId,
@@ -400,7 +401,7 @@ const updateStock = async (request) => {
   const isUpdated = await Product.findByIdAndUpdate(productId, request.body, {
     returnDocument: "after",
   });
-  if (isUpdated) redis.del(productId);
+  if (isUpdated) deleteCached(productId);
 
   return isUpdated;
 };

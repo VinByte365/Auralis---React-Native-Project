@@ -61,3 +61,9 @@ const deleteCached = async (key) => {
     return null;
   }
 };
+
+module.exports = {
+  getCache,
+  setCache,
+  deleteCached,
+};
