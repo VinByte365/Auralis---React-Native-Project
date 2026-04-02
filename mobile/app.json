@@ -25,7 +25,7 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "package": "com.singurity.auralis",
-      "googleServicesFile": "./google-services.json"
+      "googleServicesFile": "@GOOGLE_SERVICES_FILE"
     },
     "web": {
       "favicon": "./assets/favicon.png"
