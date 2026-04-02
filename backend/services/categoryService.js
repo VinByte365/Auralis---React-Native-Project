@@ -29,6 +29,8 @@ exports.list = async () => {
       $sort: { categoryName: 1 },
     },
   ]);
+
+  setCache("categories", null, categories);
   return categories;
 };
 
