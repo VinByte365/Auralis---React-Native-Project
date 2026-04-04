@@ -3,9 +3,9 @@ const { createLog } = require("./activityLogsService");
 const { getCache, setCache, deleteCached } = require("../cache/cache.service");
 
 exports.list = async () => {
-  const categories = null;
+  let categories = null;
   const cached = await getCache("categories");
-  if (!cached) return cached;
+  if (cached) return cached;
 
   categories = await Category.aggregate([
     {
