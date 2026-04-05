@@ -28,16 +28,12 @@ const getCache = async (key) => {
 
 const setCache = async (key, ttl, value) => {
   if (!key || typeof key != "string" || !value) return null;
-
+  const setTTL = typeof ttl === "number" ? ttl : process.env.TTL;
   try {
-    const isSet = await redis.setEx(
-      key,
-      Number(ttl || process.env.TTL),
-      JSON.stringify(value),
-    );
+    const isSet = await redis.setEx(key, setTTL, JSON.stringify(value));
     return isSet === "OK";
   } catch (err) {
-    console.error(`[Redis]: ${err}`);
+    console.error(`[Redis]: ${err.message}`);
     return null;
   }
 };

@@ -1,8 +1,13 @@
 const Category = require("../models/categoryModel");
 const { createLog } = require("./activityLogsService");
+const { getCache, setCache, deleteCached } = require("../cache/cache.service");
 
 exports.list = async () => {
-  const categories = await Category.aggregate([
+  let categories = null;
+  const cached = await getCache("categories");
+  if (cached) return cached;
+
+  categories = await Category.aggregate([
     {
       $lookup: {
         from: "products",
@@ -24,6 +29,8 @@ exports.list = async () => {
       $sort: { categoryName: 1 },
     },
   ]);
+
+  setCache("categories", null, categories);
   return categories;
 };
 
@@ -46,6 +53,8 @@ exports.create = async (request) => {
     "SUCCESS",
     `Successfully created the category/categories`,
   );
+
+  deleteCached("categories");
   return result;
 };
 
@@ -67,6 +76,9 @@ exports.update = async (request) => {
     );
     throw new Error("failed to update the category");
   }
+
+  deleteCached("categories");
+
   createLog(
     request.user.userId,
     "UPDATE_CATEGORY",
@@ -95,5 +107,7 @@ exports.delete = async (request) => {
     "SUCCESS",
     `Successfully deleted ${deleteCategory.categoryName}`,
   );
+
+  deleteCached("categories");
   return deleteCategory;
 };
